@@ -2,4 +2,4 @@
 
 Project KPI and CI analyser. 
 
-![](./.github/uml-transparent.png)
+![](./.github/uml.png)
