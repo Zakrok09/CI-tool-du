@@ -6,10 +6,19 @@ import org.kohsuke.github.GHRepository;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Repository extends GitHubObject implements Serializable {
+    // modify this to change how far into the past to get issues
+    // set low for developing and debugging, high for actual data collection
+    private final Instant yesterday = Instant.now().minus(1, ChronoUnit.DAYS);
+    private final Instant oneMonthAgo = Instant.now().minus(30, ChronoUnit.DAYS);
+    private final Instant all = Instant.MIN;
+    private final Instant dateCutoff =  oneMonthAgo;
+
     public String defaultBranch;
     public String description;
     public String fullName;
@@ -33,7 +42,7 @@ public class Repository extends GitHubObject implements Serializable {
         }
 
         issues = new ArrayList<>();
-        for  (GHIssue i : repo.queryIssues().list()) {
+        for  (GHIssue i : repo.queryIssues().since(dateCutoff).list()) {
             issues.add(new Issue(i));
         }
     }

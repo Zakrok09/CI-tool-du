@@ -1,12 +1,7 @@
 package org.example.fetching;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
-import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
-import org.example.data.GHRepositoryMixin;
 import org.example.data.Repository;
-import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 
 import java.io.File;
@@ -22,10 +17,9 @@ public class CachedDataRepoFetcher {
      * @return repository object
      * @throws IOException
      */
-    public static Repository getRepo(GitHub gh, String repoName, boolean forceUpdate) throws IOException {
-        System.out.println("Getting repo: " + repoName);
+    public static Repository getRepoData(GitHub gh, String repoName, boolean forceUpdate) throws IOException {
+        System.out.println("Getting repo data: " + repoName);
 
-        System.out.println("Initializing mapper.");
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
 
@@ -46,7 +40,7 @@ public class CachedDataRepoFetcher {
         return repo;
     }
 
-    public static Repository getRepo(GitHub gh, String repoName) throws IOException {
-        return getRepo(gh, repoName, false);
+    public static Repository getRepoData(GitHub gh, String repoName) throws IOException {
+        return getRepoData(gh, repoName, false);
     }
 }
