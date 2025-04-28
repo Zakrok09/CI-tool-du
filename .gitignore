@@ -8,7 +8,9 @@ config.properties
 
 ### local repo cache
 repos/**
+/repos/**
 clones/**
+/clones/**
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
