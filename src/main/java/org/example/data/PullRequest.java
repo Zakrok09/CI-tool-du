@@ -11,6 +11,8 @@ public class PullRequest extends GitHubObject implements Serializable {
     public boolean isMerged;
     public Instant mergedAt;
     public int commitCount;
+    public int reviewCount;
+    public int commentCount;
 
     public PullRequest() {}
 
@@ -19,5 +21,7 @@ public class PullRequest extends GitHubObject implements Serializable {
         isMerged = pr.isMerged();
         mergedAt = pr.getMergedAt();
         commitCount = pr.getCommits();
+        reviewCount = pr.listReviews().toList().size();
+        commentCount = pr.getCommentsCount();
     }
 }
