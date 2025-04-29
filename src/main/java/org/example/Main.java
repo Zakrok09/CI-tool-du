@@ -1,7 +1,46 @@
 package org.example;
 
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.revwalk.RevWalk;
+import org.example.data.Repository;
+import org.example.fetching.CachedDataRepoFetcher;
+import org.example.fetching.CachedGitCloner;
+import org.example.utils.GitHubAPIAuthHelper;
+import org.kohsuke.github.GitHub;
+
+import java.io.IOException;
+
 public class Main {
-    public static void main(String[] args) {
-        System.out.println("Hello, World!");
+    public static void main(String[] args) throws IOException {
+        GitHub gh = GitHubAPIAuthHelper.getGitHubAPI();
+
+        // Small example usage
+        // Use repo data to identify default branch, then from the Git object
+        // traverse commits to the default branch
+        // and print the first 10
+        // TL;DR get last 10 merges to main
+        Repository geitRepo = CachedDataRepoFetcher.getRepoData(gh, "kelhaji/geit");
+        Git geit = CachedGitCloner.getGit("kelhaji/geit");
+
+        ObjectId mainBranch = geit.getRepository().resolve(geitRepo.defaultBranch);
+
+        try (RevWalk walk = new RevWalk(geit.getRepository())) {
+            RevCommit headCommit = walk.parseCommit(mainBranch);
+
+            walk.markStart(headCommit);
+
+            int count = 0;
+            for (RevCommit commit : walk) {
+                if (commit.getParentCount() > 1) {
+                    System.out.println("Merge commit: " + commit.getShortMessage() + " (" + commit.getName() + ")");
+                    count++;
+                    if (count >= 10) {
+                        break;
+                    }
+                }
+            }
+        }
     }
 }
