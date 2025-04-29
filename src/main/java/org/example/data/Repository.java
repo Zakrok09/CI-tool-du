@@ -1,8 +1,6 @@
 package org.example.data;
 
-import org.kohsuke.github.GHIssue;
-import org.kohsuke.github.GHPullRequest;
-import org.kohsuke.github.GHRepository;
+import org.kohsuke.github.*;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -26,6 +24,8 @@ public class Repository extends GitHubObject implements Serializable {
     public List<PullRequest> pullRequests;
     public List<Issue> issues;
 
+    public List<User> contributors;
+
     public Repository() {}
 
     public Repository(GHRepository repo) throws IOException {
@@ -36,14 +36,36 @@ public class Repository extends GitHubObject implements Serializable {
         defaultBranch = repo.getDefaultBranch();
         branches = repo.getBranches().keySet().stream().toList();
 
-        pullRequests = new ArrayList<>();
-        for (GHPullRequest p : repo.queryPullRequests().list()) {
-            pullRequests.add(new PullRequest(p));
+        pullRequests = extractPullRequests(repo);
+        issues = extractIssues(repo);
+
+        contributors = extractContributors(repo);
+    }
+
+    private List<PullRequest> extractPullRequests(GHRepository repo) throws IOException {
+        List<PullRequest> prs = new ArrayList<>();
+        for (GHPullRequest p : repo.queryPullRequests().state(GHIssueState.ALL).list()) {
+            prs.add(new PullRequest(p));
         }
 
-        issues = new ArrayList<>();
+        return prs;
+    }
+
+    private List<Issue> extractIssues(GHRepository repo) throws IOException {
+        List<Issue> issues = new ArrayList<>();
         for  (GHIssue i : repo.queryIssues().since(dateCutoff).list()) {
             issues.add(new Issue(i));
         }
+
+        return issues;
+    }
+
+    private List<User> extractContributors(GHRepository repo) throws IOException {
+        List<User> users = new ArrayList<>();
+        for  (GHUser u : repo.listContributors()) {
+            users.add(new User(u));
+        }
+
+        return users;
     }
 }
