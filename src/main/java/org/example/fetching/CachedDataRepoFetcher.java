@@ -6,6 +6,9 @@ import org.kohsuke.github.GitHub;
 
 import java.io.File;
 import java.io.IOException;
+import java.rmi.RemoteException;
+
+import static org.example.Main.logger;
 
 public class CachedDataRepoFetcher {
     /** Checks local file system in repos/**. If a repo is found there, it is returned.
@@ -15,10 +18,10 @@ public class CachedDataRepoFetcher {
      * @param repoName name of repo to fetch
      * @param forceUpdate will update the local file even if found
      * @return repository object
-     * @throws IOException
+     * @throws IOException on failed read of saved data
      */
     public static Repository getRepoData(GitHub gh, String repoName, boolean forceUpdate) throws IOException {
-        System.out.println("Getting repo data: " + repoName);
+        logger.info("Getting repo data: {}", repoName);
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
@@ -26,18 +29,22 @@ public class CachedDataRepoFetcher {
         String repoFileName = repoName.replace('/', '_') + ".json";
         File output = new File("repos", repoFileName);
         if (output.exists() && !forceUpdate) {
-            System.out.println(repoName + " found locally, getting from cache.");
+            logger.debug("{} found locally, getting from cache.", repoName);
             return mapper.readValue(output, Repository.class);
         }
 
-        System.out.println(repoName + " not found or forced update, getting from GitHub.");
+        logger.debug("{} not found or forced update, getting from GitHub.", repoName);
         Repository repo = new Repository(gh.getRepository(repoName));
 
-        System.out.println("Done reading from API, writing to file.");
-        output.getParentFile().mkdirs();
-        mapper.writerWithDefaultPrettyPrinter()
-                .writeValue(output, repo);
-        return repo;
+        logger.info("Done reading from API, writing to file.");
+        if (output.getParentFile().mkdirs()) {
+            mapper.writerWithDefaultPrettyPrinter()
+                    .writeValue(output, repo);
+            return repo;
+        } else {
+            logger.error("Failed to create directories, necessary to save repo data.");
+            throw new RemoteException("Error `.mkdirs()`. Directories not created.");
+        }
     }
 
     public static Repository getRepoData(GitHub gh, String repoName) throws IOException {
