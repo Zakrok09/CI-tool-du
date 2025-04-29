@@ -1,5 +1,7 @@
 package org.example;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.revwalk.RevCommit;
@@ -13,8 +15,11 @@ import org.kohsuke.github.GitHub;
 import java.io.IOException;
 
 public class Main {
+    public static final Logger logger = LogManager.getLogger(Main.class);
+
     public static void main(String[] args) throws IOException {
         GitHub gh = GitHubAPIAuthHelper.getGitHubAPI();
+        logger.info("Starting script");
 
         // Small example usage
         // Use repo data to identify default branch, then from the Git object
@@ -34,7 +39,7 @@ public class Main {
             int count = 0;
             for (RevCommit commit : walk) {
                 if (commit.getParentCount() > 1) {
-                    System.out.println("Merge commit: " + commit.getShortMessage() + " (" + commit.getName() + ")");
+                    logger.debug("Merge commit: {} ({})", commit.getShortMessage(), commit.getName());
                     count++;
                     if (count >= 10) {
                         break;

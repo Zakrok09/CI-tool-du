@@ -47,3 +47,7 @@ build/
 
 ### Nix ###
 .direnv
+
+### Various ###
+.env
+.data/
