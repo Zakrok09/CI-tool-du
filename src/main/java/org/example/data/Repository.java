@@ -24,6 +24,7 @@ public class Repository extends GitHubObject implements Serializable {
     public List<PullRequest> pullRequests;
     public List<Issue> issues;
 
+    public User owner;
     public List<User> contributors;
 
     public Repository() {}
@@ -39,6 +40,7 @@ public class Repository extends GitHubObject implements Serializable {
         pullRequests = extractPullRequests(repo);
         issues = extractIssues(repo);
 
+        owner = new User(repo.getOwner());
         contributors = extractContributors(repo);
     }
 
