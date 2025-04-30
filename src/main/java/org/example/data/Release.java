@@ -8,8 +8,8 @@ import java.time.Instant;
 
 public class Release extends GitHubObject implements Serializable {
 
-    Instant publishedAt;
-    String tagName;
+    public Instant publishedAt;
+    public String tagName;
 
     public Release() {}
 
