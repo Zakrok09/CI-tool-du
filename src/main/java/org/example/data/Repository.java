@@ -27,6 +27,9 @@ public class Repository extends GitHubObject implements Serializable {
     public User owner;
     public List<User> contributors;
 
+    public List<Release> releases;
+    public List<Tag> tags;
+
     public Repository() {}
 
     public Repository(GHRepository repo) throws IOException {
@@ -42,6 +45,9 @@ public class Repository extends GitHubObject implements Serializable {
 
         owner = new User(repo.getOwner());
         contributors = extractContributors(repo);
+
+        releases = extractReleases(repo);
+        tags = extractTags(repo);
     }
 
     private List<PullRequest> extractPullRequests(GHRepository repo) throws IOException {
@@ -69,5 +75,23 @@ public class Repository extends GitHubObject implements Serializable {
         }
 
         return users;
+    }
+
+    private List<Release> extractReleases(GHRepository repo) throws IOException {
+        List<Release> releases = new ArrayList<>();
+        for  (GHRelease r : repo.listReleases()) {
+            releases.add(new Release(r));
+        }
+
+        return releases;
+    }
+
+    private List<Tag> extractTags(GHRepository repo) throws IOException {
+        List<Tag> tags = new ArrayList<>();
+        for  (GHTag t : repo.listTags()) {
+            tags.add(new Tag(t));
+        }
+
+        return tags;
     }
 }
