@@ -1,7 +1,6 @@
 package org.example.data;
 
 import org.kohsuke.github.GHPullRequest;
-import org.kohsuke.github.GHRepository;
 
 import java.io.IOException;
 import java.io.Serializable;

@@ -1,12 +1,12 @@
 package org.example.data;
 
+import org.example.extraction.DataExtractor;
 import org.kohsuke.github.*;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.List;
 
 public class Repository extends GitHubObject implements Serializable {
@@ -27,6 +27,9 @@ public class Repository extends GitHubObject implements Serializable {
     public User owner;
     public List<User> contributors;
 
+    public List<Release> releases;
+    public List<Tag> tags;
+
     public Repository() {}
 
     public Repository(GHRepository repo) throws IOException {
@@ -37,37 +40,13 @@ public class Repository extends GitHubObject implements Serializable {
         defaultBranch = repo.getDefaultBranch();
         branches = repo.getBranches().keySet().stream().toList();
 
-        pullRequests = extractPullRequests(repo);
-        issues = extractIssues(repo);
+        pullRequests = DataExtractor.extractPullRequests(repo);
+        issues = DataExtractor.extractIssues(repo, dateCutoff);
 
         owner = new User(repo.getOwner());
-        contributors = extractContributors(repo);
-    }
+        contributors = DataExtractor.extractContributors(repo);
 
-    private List<PullRequest> extractPullRequests(GHRepository repo) throws IOException {
-        List<PullRequest> prs = new ArrayList<>();
-        for (GHPullRequest p : repo.queryPullRequests().state(GHIssueState.ALL).list()) {
-            prs.add(new PullRequest(p));
-        }
-
-        return prs;
-    }
-
-    private List<Issue> extractIssues(GHRepository repo) throws IOException {
-        List<Issue> issues = new ArrayList<>();
-        for  (GHIssue i : repo.queryIssues().since(dateCutoff).list()) {
-            issues.add(new Issue(i));
-        }
-
-        return issues;
-    }
-
-    private List<User> extractContributors(GHRepository repo) throws IOException {
-        List<User> users = new ArrayList<>();
-        for  (GHUser u : repo.listContributors()) {
-            users.add(new User(u));
-        }
-
-        return users;
+        releases = DataExtractor.extractReleases(repo);
+        tags = DataExtractor.extractTags(repo);
     }
 }
