@@ -37,14 +37,16 @@ public class CachedDataRepoFetcher {
         Repository repo = new Repository(gh.getRepository(repoName));
 
         logger.info("Done reading from API, writing to file.");
-        if (output.getParentFile().mkdirs()) {
-            mapper.writerWithDefaultPrettyPrinter()
-                    .writeValue(output, repo);
-            return repo;
-        } else {
+
+        if(!output.getParentFile().exists() && !output.getParentFile().mkdirs()) {
             logger.error("Failed to create directories, necessary to save repo data.");
             throw new RemoteException("Error `.mkdirs()`. Directories not created.");
         }
+
+        mapper.writerWithDefaultPrettyPrinter()
+                .writeValue(output, repo);
+
+        return repo;
     }
 
     public static Repository getRepoData(GitHub gh, String repoName) throws IOException {

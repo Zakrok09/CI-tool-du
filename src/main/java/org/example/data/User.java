@@ -10,10 +10,12 @@ public class User implements Serializable {
 
     public String name;
     public Instant accountCreatedAt;
+    public String type;
 
     public User() {}
 
     public User(GHUser user) throws IOException {
         accountCreatedAt = user.getCreatedAt();
+        type = user.getType();
     }
 }
