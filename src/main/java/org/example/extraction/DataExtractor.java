@@ -20,7 +20,7 @@ public class DataExtractor {
 
     public static List<Issue> extractIssues(GHRepository repo, Instant dateCutoff) throws IOException {
         List<Issue> issues = new ArrayList<>();
-        for  (GHIssue i : repo.queryIssues().since(dateCutoff).list()) {
+        for  (GHIssue i : repo.queryIssues().state(GHIssueState.ALL).list()) {
             issues.add(new Issue(i));
         }
 

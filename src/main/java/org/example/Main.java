@@ -6,6 +6,7 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
+import org.example.computation.DataComputor;
 import org.example.data.Repository;
 import org.example.fetching.CachedDataRepoFetcher;
 import org.example.fetching.CachedGitCloner;
@@ -13,6 +14,8 @@ import org.example.utils.GitHubAPIAuthHelper;
 import org.kohsuke.github.GitHub;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.util.List;
 
 public class Main {
     public static final Logger logger = LogManager.getLogger(Main.class);
@@ -47,5 +50,8 @@ public class Main {
                 }
             }
         }
+
+        // Example defect count
+        // DataComputor.computeDefectCount(List.of(geitRepo), Duration.ofDays(365), 5);
     }
 }
