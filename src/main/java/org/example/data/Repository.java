@@ -27,7 +27,6 @@ public class Repository extends GitHubObject implements Serializable {
     public List<Issue> issues;
 
     public List<Release> releases;
-    public List<Tag> tags;
 
     public Repository() {}
 
@@ -45,6 +44,5 @@ public class Repository extends GitHubObject implements Serializable {
         issues = DataExtractor.extractIssues(repo);
 
         releases = DataExtractor.extractReleases(repo);
-        tags = DataExtractor.extractTags(repo);
     }
 }
