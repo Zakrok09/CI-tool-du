@@ -1,27 +1,51 @@
 package org.example.computation;
 
+import static org.example.Main.logger;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.time.Instant;
+import java.rmi.RemoteException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
-import org.example.data.*;
+import org.example.data.Issue;
+import org.example.data.Repository;
 
 public class DataComputor {
 
-    // TODO: Should this method save to file or return values?
-    public static void computeDefectCount(List<Repository> repos, Duration intervalSize, int intervalCount) {
+    // TODO: Should this method save to file, or return values and another method performs saves?
+    /** Compute defect counts for a list of repositories for a specified number of intervals with a given size.
+     * Defects are issues with the isBug flag set to true.
+     * Issues which are created before the start of the first interval are still counted.
+     * The output file is named "defectCount_<intervalSize>_<intervalCount>.csv" and saved in the "kpis" directory.
+     * 
+     * @param repos List of repositories to compute defect counts for.
+     * @param intervalSize Size of each interval.
+     * @param intervalCount Number of intervals to compute.
+     * 
+     * @throws IllegalArgumentException if intervalCount is less than 1.
+     * @throws IOException on failed write of data.
+     * 
+     * @apiNote Example: computeDefectCount(repos, Duration.ofDays(7), 4) will compute defect counts for 4 intervals of 7 days each.
+     * The intervals will be computed from the last updatedAt of the repository, going back in time.
+     */
+    public static void computeDefectCount(List<Repository> repos, Duration intervalSize, int intervalCount) throws IOException{
+        logger.info("Computing defect counts for {} repositories with interval size {} and count {}.", repos.size(), intervalSize, intervalCount);
+        
         if (intervalCount < 1) {
-            return;
+            logger.error("Interval count must be at least 1.");
+            throw new IllegalArgumentException("Interval count must be at least 1.");
         }
 
-        // TODO: Create a key for the file name based on the parameters
-        File output = new File("kpis", "defects_per_interval_defects.csv");
+        // TODO: Save a timestamp as well? For updates/data safety.
+        String fileName = "defectCount_" + intervalSize.toString() + "_" + intervalCount + ".csv";
+        File output = new File("kpis", fileName);
 
         if(!output.getParentFile().exists() && !output.getParentFile().mkdirs()) {
-            return;
+            logger.error("Failed to create directories, necessary to save defect counts.");
+            throw new RemoteException("Error `.mkdirs()`. Directories not created.");
         }
 
         try (FileWriter csvWriter = new FileWriter(output)) {
@@ -32,7 +56,7 @@ public class DataComputor {
             csvWriter.append("\n");
 
             for (Repository repo : repos) {
-                Instant windowEnd = repo.updatedAt;
+                Instant windowEnd = repo.updatedAt; // TODO: Maybe use a different end point? e.g.: last issue updatedAt
                 Instant windowStart = windowEnd.minus(intervalSize.multipliedBy(intervalCount));
                 int[] delta = new int[intervalCount + 1];
 
@@ -44,6 +68,9 @@ public class DataComputor {
                     int startIndex = (int) Duration.between(windowStart, createdAt).dividedBy(intervalSize);
                     int endIndex = (closedAt != null) ? endIndex = (int) Duration.between(windowStart, closedAt).dividedBy(intervalSize) : (intervalCount - 1);
 
+                    // TODO: These checks need to be very precise as we need to describe which issues we consider.
+                    // For now, issues which were created before the window start are still counted.
+                    // Issues which are closed before the window start are not counted.
                     if (startIndex < 0) startIndex = 0;
                     if (endIndex < 0) continue;
 
@@ -65,8 +92,10 @@ public class DataComputor {
                 csvWriter.append("\n");
             }
 
+            logger.info("Defect counts saved to {}", output.getAbsolutePath());
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.fatal("Error writing defect counts: {}", e.getLocalizedMessage());
+            throw new RuntimeException(e);
         }
     }
 }
