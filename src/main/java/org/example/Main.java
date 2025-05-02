@@ -53,5 +53,8 @@ public class Main {
 
         // Example defect count
         // DataComputor.computeDefectCount(List.of(geitRepo), Duration.ofDays(365), 5);
+
+        // Example MTTR
+        // DataComputor.computeMTTR(List.of(geitRepo), Duration.ofDays(365), 5);
     }
 }
