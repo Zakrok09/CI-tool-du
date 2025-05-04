@@ -10,12 +10,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
+import org.example.data.CheckRun;
 import org.example.data.Issue;
 import org.example.data.Repository;
 
 public class DataComputor {
 
     // TODO: Should these methods save to file, or return values and another method performs saves?
+    // Probably better to refactor and have one method for saving to file, and the others return values.
 
     /** Compute defect counts for a list of repositories for a specified number of intervals with a given size.
      * Defects are issues with the isBug flag set to true.
@@ -67,7 +69,7 @@ public class DataComputor {
                     if (!issue.isBug) continue;
 
                     int startIndex = (int) (Duration.between(windowStart, createdAt).dividedBy(intervalSize));
-                    int endIndex = (closedAt != null) ? endIndex = ((int) (Duration.between(windowStart, closedAt).dividedBy(intervalSize))) : (intervalCount - 1);
+                    int endIndex = (closedAt != null) ? ((int) (Duration.between(windowStart, closedAt).dividedBy(intervalSize))) : (intervalCount - 1);
 
                     // TODO: These checks need to be very precise as we need to describe which issues we consider.
                     // For now, issues which were created before the window start are still counted.
@@ -156,7 +158,7 @@ public class DataComputor {
 
                     double solveTime = ((double) Duration.between(createdAt, closedAt).toMillis()) / 1000.0; // TODO: Should we use seconds or minutes?
                     int startIndex = (int) (Duration.between(windowStart, createdAt).dividedBy(intervalSize));
-                    int endIndex = (closedAt != null) ? endIndex = ((int) (Duration.between(windowStart, closedAt).dividedBy(intervalSize))) : (intervalCount - 1);
+                    int endIndex = (closedAt != null) ? ((int) (Duration.between(windowStart, closedAt).dividedBy(intervalSize))) : (intervalCount - 1);
 
                     // TODO: These checks need to be very precise as we need to describe which issues we consider.
                     // For now, issues which were created before the window start are not counted.
@@ -192,6 +194,83 @@ public class DataComputor {
             logger.info("MTTRs saved to {}", output.getAbsolutePath());
         } catch (IOException e) {
             logger.fatal("Error writing MTTRs {}", e.getLocalizedMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+    // TODO: Should we take a look at revert commits as well?
+    // TODO: Is it correct to look at check runs? Or should it be check suites / deployments?
+    public static void computeCFR(List<Repository> repos, Duration intervalSize, int intervalCount) throws IOException{
+        logger.info("Computing CFRs for {} repositories with interval size {} and count {}.", repos.size(), intervalSize, intervalCount);
+        
+        if (intervalCount < 1) {
+            logger.error("Interval count must be at least 1.");
+            throw new IllegalArgumentException("Interval count must be at least 1.");
+        }
+
+        // TODO: Save a timestamp as well? For updates/data safety.
+        String fileName = "CFR_" + intervalSize.toString() + "_" + intervalCount + ".csv";
+        File output = new File("kpis", fileName);
+
+        if(!output.getParentFile().exists() && !output.getParentFile().mkdirs()) {
+            logger.error("Failed to create directories, necessary to save CFRs.");
+            throw new RemoteException("Error `.mkdirs()`. Directories not created.");
+        }
+
+        try (FileWriter csvWriter = new FileWriter(output)) {
+            csvWriter.append("repoName");
+            for (int i = 0; i < intervalCount; i++) {
+                csvWriter.append(",").append(String.valueOf(i));
+            }
+            csvWriter.append("\n");
+
+            for (Repository repo : repos) {
+                Instant windowEnd = repo.updatedAt; // TODO: Maybe use a different end point? e.g.: last issue updatedAt
+                Instant windowStart = windowEnd.minus(intervalSize.multipliedBy(intervalCount));
+                int[] failurePrefix = new int[intervalCount + 1];
+                int[] totalPrefix = new int[intervalCount + 1];
+
+                for (CheckRun checkRun : repo.checkRuns) {
+                    Instant completed_at = checkRun.completed_at;
+                    if (completed_at == null) continue;
+
+                    int endIndex = (int) (Duration.between(windowStart, completed_at).dividedBy(intervalSize));
+
+                    // TODO: These checks need to be very precise as we need to describe which checkruns we consider.
+                    // For now, check runs which were completed after the window start are counted.
+                    if (endIndex < 0) continue;
+
+                    // TODO: Which interval should we attribute the solve time to?
+                    // TODO: Do we count all check runs towards total? There are also conclusions like "skipped" and "neutral".
+                    if (checkRun.conclusion.equals("failure")) {
+                        ++failurePrefix[endIndex];
+                    }
+                    ++totalPrefix[endIndex];
+                }
+
+                double[] cfrPerInterval = new double[intervalCount];
+                int failureCount = 0;
+                int totalCount = 0;
+                for (int i = 0; i < intervalCount; i++) {
+                    failureCount += failurePrefix[i];
+                    totalCount += totalPrefix[i];
+                    if (totalCount == 0) {
+                        cfrPerInterval[i] = 0.0;
+                    } else {
+                        cfrPerInterval[i] = ((double) failureCount) / ((double) totalCount);
+                    }
+                }
+
+                csvWriter.append(repo.fullName);
+                for (double cfr : cfrPerInterval) {
+                    csvWriter.append(",").append(String.valueOf(cfr));
+                }
+                csvWriter.append("\n");
+            }
+
+            logger.info("CFRs saved to {}", output.getAbsolutePath());
+        } catch (IOException e) {
+            logger.fatal("Error writing CFRs {}", e.getLocalizedMessage());
             throw new RuntimeException(e);
         }
     }

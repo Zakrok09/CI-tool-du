@@ -29,7 +29,7 @@ public class Main {
         // traverse commits to the default branch
         // and print the first 10
         // TL;DR get last 10 merges to main
-        Repository geitRepo = CachedDataRepoFetcher.getRepoData(gh, "kelhaji/geit");
+        Repository geitRepo = CachedDataRepoFetcher.getRepoData(gh, "aipotheosis-labs/aci");
         Git geit = CachedGitCloner.getGit("kelhaji/geit");
 
         ObjectId mainBranch = geit.getRepository().resolve(geitRepo.defaultBranch);
@@ -51,10 +51,13 @@ public class Main {
             }
         }
 
-        // Example defect count
+        // Example defect counts
         // DataComputor.computeDefectCount(List.of(geitRepo), Duration.ofDays(365), 5);
 
-        // Example MTTR
+        // Example MTTRs
         // DataComputor.computeMTTR(List.of(geitRepo), Duration.ofDays(365), 5);
+
+        // Example CFRs
+        // DataComputor.computeCFR(List.of(geitRepo), Duration.ofDays(365), 5);
     }
 }
