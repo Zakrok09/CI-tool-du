@@ -1,5 +1,6 @@
 package org.example;
 
+import okhttp3.Cache;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jgit.api.Git;
@@ -11,9 +12,11 @@ import org.example.computation.DataSaver;
 import org.example.data.Repository;
 import org.example.fetching.CachedDataRepoFetcher;
 import org.example.fetching.CachedGitCloner;
+import org.example.fetching.FetchFromJSON;
 import org.example.utils.GitHubAPIAuthHelper;
 import org.kohsuke.github.GitHub;
 
+import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
@@ -27,6 +30,15 @@ public class Main {
         GitHub gh = GitHubAPIAuthHelper.getGitHubAPI();
         logger.info("Starting script");
 
+        //exampleGet10MergesToMainGeit(gh);
+
+        //edit these numbers before running
+        FetchFromJSON.fetch(gh, 10, 3);
+    }
+
+
+
+    private static void exampleGet10MergesToMainGeit(GitHub gh) throws IOException {
         // Small example usage
         // Use repo data to identify default branch, then from the Git object
         // traverse commits to the default branch
