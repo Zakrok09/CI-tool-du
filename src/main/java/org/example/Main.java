@@ -2,17 +2,14 @@ package org.example;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.revwalk.RevWalk;
+import org.example.computation.DeliveryEfficiencyKPICalculator;
 import org.example.data.Repository;
 import org.example.fetching.CachedDataRepoFetcher;
-import org.example.fetching.CachedGitCloner;
 import org.example.utils.GitHubAPIAuthHelper;
 import org.kohsuke.github.GitHub;
 
 import java.io.IOException;
+import java.time.Duration;
 
 public class Main {
     public static final Logger logger = LogManager.getLogger(Main.class);
@@ -21,31 +18,41 @@ public class Main {
         GitHub gh = GitHubAPIAuthHelper.getGitHubAPI();
         logger.info("Starting script");
 
-        // Small example usage
-        // Use repo data to identify default branch, then from the Git object
-        // traverse commits to the default branch
-        // and print the first 10
-        // TL;DR get last 10 merges to main
-        Repository geitRepo = CachedDataRepoFetcher.getRepoData(gh, "kelhaji/geit");
-        Git geit = CachedGitCloner.getGit("kelhaji/geit");
+        Repository geitRepo = CachedDataRepoFetcher.getRepoData(gh, "dnbln/DiscordPanel");
+        DeliveryEfficiencyKPICalculator.storeDeliveryFrequencies(geitRepo,
+                geitRepo.releases.get(geitRepo.releases.size() - 1).publishedAt,
+                geitRepo.releases.get(0).publishedAt,
+                Duration.ofDays(30));
 
-        ObjectId mainBranch = geit.getRepository().resolve(geitRepo.defaultBranch);
+        DeliveryEfficiencyKPICalculator.storeDeliverySizes(geitRepo,
+                geitRepo.releases.get(geitRepo.releases.size() - 1).publishedAt,
+                geitRepo.releases.get(0).publishedAt,
+                Duration.ofDays(30));
 
-        try (RevWalk walk = new RevWalk(geit.getRepository())) {
-            RevCommit headCommit = walk.parseCommit(mainBranch);
+        DeliveryEfficiencyKPICalculator.storeChangeLeadTimes(geitRepo,
+                geitRepo.releases.get(geitRepo.releases.size() - 1).publishedAt,
+                geitRepo.releases.get(0).publishedAt,
+                Duration.ofDays(30));
 
-            walk.markStart(headCommit);
-
-            int count = 0;
-            for (RevCommit commit : walk) {
-                if (commit.getParentCount() > 1) {
-                    logger.debug("Merge commit: {} ({})", commit.getShortMessage(), commit.getName());
-                    count++;
-                    if (count >= 10) {
-                        break;
-                    }
-                }
-            }
-        }
+//        Git geit = CachedGitCloner.getGit("Zakrok09/ts-automata");
+//
+//        ObjectId mainBranch = geit.getRepository().resolve(geitRepo.defaultBranch);
+//
+//        try (RevWalk walk = new RevWalk(geit.getRepository())) {
+//            RevCommit headCommit = walk.parseCommit(mainBranch);
+//
+//            walk.markStart(headCommit);
+//
+//            int count = 0;
+//            for (RevCommit commit : walk) {
+//                if (commit.getParentCount() > 1) {
+//                    logger.debug("Merge commit: {} ({})", commit.getShortMessage(), commit.getName());
+//                    count++;
+//                    if (count >= 10) {
+//                        break;
+//                    }
+//                }
+//            }
+//        }
     }
 }

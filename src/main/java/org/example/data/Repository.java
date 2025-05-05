@@ -40,9 +40,13 @@ public class Repository extends GitHubObject implements Serializable {
 
         commits = DataExtractor.extractCommits(repo);
 
+        if(commits.isEmpty()) {
+            throw new IllegalStateException("Repository contains no commits.");
+        }
+
         pullRequests = DataExtractor.extractPullRequests(repo);
         issues = DataExtractor.extractIssues(repo);
 
-        releases = DataExtractor.extractReleases(repo);
+        releases = DataExtractor.extractReleases(repo, commits.get(commits.size() - 1));
     }
 }
