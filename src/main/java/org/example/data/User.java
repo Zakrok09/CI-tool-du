@@ -15,9 +15,9 @@ public class User implements Serializable {
 
     public User() {}
 
-    public User(GHUser user, GHRepository repo) throws IOException {
-        name = user.getName();
+    public User(GHUser user) throws IOException {
+        name = user.getLogin();
         accountCreatedAt = user.getCreatedAt();
-        isCollaborator = repo.isCollaborator(user);
+        // isCollaborator = repo.isCollaborator(user);
     }
 }

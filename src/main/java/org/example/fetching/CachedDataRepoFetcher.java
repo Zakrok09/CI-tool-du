@@ -34,19 +34,27 @@ public class CachedDataRepoFetcher {
         }
 
         logger.debug("{} not found or forced update, getting from GitHub.", repoName);
-        Repository repo = new Repository(gh.getRepository(repoName));
-
-        logger.info("Done reading from API, writing to file.");
 
         if(!output.getParentFile().exists() && !output.getParentFile().mkdirs()) {
             logger.error("Failed to create directories, necessary to save repo data.");
             throw new RemoteException("Error `.mkdirs()`. Directories not created.");
         }
 
-        mapper.writerWithDefaultPrettyPrinter()
-                .writeValue(output, repo);
+        try {
+            Repository repo = new Repository(gh.getRepository(repoName));
 
-        return repo;
+            logger.info("Done reading from API, writing to file.");
+
+            mapper.writerWithDefaultPrettyPrinter()
+                    .writeValue(output, repo);
+
+            return repo;
+        } catch (Exception e) {
+            logger.error("Error occurred while instantiating Repository with name {}.\nError: {}",
+                    repoName, e.getMessage());
+        }
+
+        return null;
     }
 
     public static Repository getRepoData(GitHub gh, String repoName) throws IOException {

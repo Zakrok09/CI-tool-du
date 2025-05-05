@@ -44,7 +44,9 @@ public class DataExtractor {
     public static List<Commit> extractCommits(GHRepository repo) throws IOException {
         List<Commit> commits = new ArrayList<>();
         for  (GHCommit c : repo.listCommits()) {
-            commits.add(new Commit(c));
+            try {
+                commits.add(new Commit(c));
+            } catch (Exception ignored) {}
         }
 
         return commits;

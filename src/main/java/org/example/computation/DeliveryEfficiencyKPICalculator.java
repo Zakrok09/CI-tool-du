@@ -134,7 +134,6 @@ public class DeliveryEfficiencyKPICalculator {
         int currReleaseIdx = 0;
 
         for(Commit c : commitsSorted) {
-            System.out.println(c.commitDate + " " + releasesSorted.get(currReleaseIdx).publishedAt);
             while(currReleaseIdx < releasesSorted.size()
                     && c.commitDate.isAfter(releasesSorted.get(currReleaseIdx).publishedAt)) {
                 currReleaseIdx++;
@@ -144,8 +143,6 @@ public class DeliveryEfficiencyKPICalculator {
             if(currReleaseIdx == releasesSorted.size()) {
                 break;
             }
-
-            System.out.println(c.sha1 + " " + currReleaseIdx);
 
             // Add duration between commit and release to current release CLT
             totalCltPerRelease.merge(releasesSorted.get(currReleaseIdx),
