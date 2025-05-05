@@ -4,7 +4,6 @@ import org.example.data.*;
 import org.kohsuke.github.*;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +19,7 @@ public class DataExtractor {
         return prs;
     }
 
-    public static List<Issue> extractIssues(GHRepository repo, Instant dateCutoff) throws IOException {
+    public static List<Issue> extractIssues(GHRepository repo) throws IOException {
         List<Issue> issues = new ArrayList<>();
         for  (GHIssue i : repo.queryIssues().state(GHIssueState.ALL).list()) {
             issues.add(new Issue(i));
@@ -29,31 +28,38 @@ public class DataExtractor {
         return issues;
     }
 
-    public static List<User> extractContributors(GHRepository repo) throws IOException {
-        List<User> users = new ArrayList<>();
-        for  (GHUser u : repo.listContributors()) {
-            users.add(new User(u));
-        }
-
-        return users;
-    }
-
     public static List<Release> extractReleases(GHRepository repo) throws IOException {
         List<Release> releases = new ArrayList<>();
-        for  (GHRelease r : repo.listReleases()) {
-            releases.add(new Release(r));
+        List<GHRelease> ghReleases = repo.listReleases().toList();
+
+        for  (int i = 0; i < ghReleases.size() - 1; i++) {
+            releases.add(new Release(ghReleases.get(i), ghReleases.get(i + 1)));
+        }
+
+        if(!ghReleases.isEmpty()) {
+            releases.add(new Release(ghReleases.get(ghReleases.size() - 1), null));
         }
 
         return releases;
     }
 
-    public static List<Tag> extractTags(GHRepository repo) throws IOException {
-        List<Tag> tags = new ArrayList<>();
-        for  (GHTag t : repo.listTags()) {
-            tags.add(new Tag(t));
+    public static List<Commit> extractCommits(GHRepository repo) throws IOException {
+        List<Commit> commits = new ArrayList<>();
+        for  (GHCommit c : repo.listCommits()) {
+            commits.add(new Commit(c));
         }
 
-        return tags;
+        return commits;
+    }
+
+    public static List<IssueComment> extractIssueComments(GHIssue issue) throws IOException {
+        List<IssueComment> comments = new ArrayList<>();
+
+        for(GHIssueComment comment : issue.getComments()) {
+            comments.add(new IssueComment(comment));
+        }
+
+        return comments;
     }
 
     public static List<CheckRun> extractCheckRuns(GHRepository repo) throws IOException {

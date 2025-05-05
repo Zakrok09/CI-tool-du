@@ -1,13 +1,11 @@
 package org.example.data;
 
+import org.example.extraction.DataExtractor;
 import org.kohsuke.github.GHIssue;
-import org.kohsuke.github.GHIssueState;
-import org.kohsuke.github.GHIssueComment;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 
 public class Issue extends GitHubObject implements Serializable {
@@ -26,16 +24,9 @@ public class Issue extends GitHubObject implements Serializable {
         // TODO: Should we include a field to mark if the issue is a pull request? i.e., do we consider open PR with label "bug" for defect count
         isBug = issue.getLabels().stream().anyMatch(label -> label.getName().equals("bug"));
         closedAt = issue.getClosedAt();
-        comments = extractComments(issue);
+
+        comments = DataExtractor.extractIssueComments(issue);
     }
 
-    private List<IssueComment> extractComments(GHIssue issue) throws IOException {
-        List<IssueComment> comments = new ArrayList<>();
 
-        for(GHIssueComment comment : issue.getComments()) {
-            comments.add(new IssueComment(comment));
-        }
-
-        return comments;
-    }
 }
