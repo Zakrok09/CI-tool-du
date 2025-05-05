@@ -2,5 +2,15 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/clones/aosp-mirror_platform_frameworks_base" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/clones/connectbot_connectbot" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/clones/davidb_scala-maven-plugin" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/clones/dustin_java-memcached-client" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/clones/junit-team_junit4" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/clones/kelhaji_geit" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/clones/mongodb_mongo-java-driver" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/clones/rnewson_couchdb-lucene" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/clones/tcurdt_jdeb" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/clones/tcurdt_jdependency" vcs="Git" />
   </component>
 </project>

@@ -9,6 +9,7 @@ import org.eclipse.jgit.revwalk.RevWalk;
 import org.example.data.Repository;
 import org.example.fetching.CachedDataRepoFetcher;
 import org.example.fetching.CachedGitCloner;
+import org.example.fetching.FetchFromJSON;
 import org.example.utils.GitHubAPIAuthHelper;
 import org.kohsuke.github.GitHub;
 
@@ -21,6 +22,15 @@ public class Main {
         GitHub gh = GitHubAPIAuthHelper.getGitHubAPI();
         logger.info("Starting script");
 
+        //exampleGet10MergesToMainGeit(gh);
+
+        //edit these numbers before running
+        FetchFromJSON.fetch(gh, 10, 3);
+    }
+
+
+
+    private static void exampleGet10MergesToMainGeit(GitHub gh) throws IOException {
         // Small example usage
         // Use repo data to identify default branch, then from the Git object
         // traverse commits to the default branch
