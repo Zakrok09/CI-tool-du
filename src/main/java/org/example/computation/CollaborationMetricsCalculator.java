@@ -2,6 +2,7 @@ package org.example.computation;
 
 import org.example.data.Commit;
 import org.example.data.Repository;
+import org.example.data.User;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -16,6 +17,9 @@ import java.util.*;
 import static org.example.Main.logger;
 
 public class CollaborationMetricsCalculator {
+
+    private static final int MIN_COMMITS_THRESHOLD = 5;
+    private final static double CORE_CONTRIBUTORS_FRACTION_THRESHOLD = 0.8;
 
     public static void storeTeamStructureMetrics(Repository repo,
                                                 Instant windowStart,
@@ -76,10 +80,10 @@ public class CollaborationMetricsCalculator {
                                                 int intervalCnt,
                                                 int[] teamSizePerInterval,
                                                 int[] teamExperiencePerInterval) {
-        Set<String>[] developersPerInterval = new Set[intervalCnt];
+        Map<User, Integer>[] developersCommitsPerInterval = new Map[intervalCnt];
 
         for(int i = 0; i < intervalCnt; i++) {
-            developersPerInterval[i] = new HashSet<>();
+            developersCommitsPerInterval[i] = new HashMap<>();
         }
 
         for(Commit c : repo.commits) {
@@ -88,20 +92,22 @@ public class CollaborationMetricsCalculator {
             }
 
             int index = (int) Duration.between(windowStart, c.commitDate).dividedBy(intervalSize);
-            Instant currWindowEnd = windowStart.plus(intervalSize.multipliedBy(index + 1));
 
-            if(!developersPerInterval[index].contains(c.author.name)) {
-                developersPerInterval[index].add(c.author.name);
-                int experience = (int) Duration.between(c.author.accountCreatedAt, currWindowEnd).toDays();
-                teamExperiencePerInterval[index] += experience;
-            }
+            developersCommitsPerInterval[index].merge(c.author, 1, Integer::sum);
         }
 
         for(int i = 0; i < intervalCnt; i++) {
-            teamSizePerInterval[i] = developersPerInterval[i].size();
+            Instant currWindowEnd = windowStart.plus(intervalSize.multipliedBy(i + 1));
 
-            if(!developersPerInterval[i].isEmpty()) {
-                teamExperiencePerInterval[i] /= developersPerInterval[i].size();
+            for (User user : developersCommitsPerInterval[i].keySet()) {
+                if (developersCommitsPerInterval[i].get(user) >= MIN_COMMITS_THRESHOLD) {
+                    teamSizePerInterval[i]++;
+                    teamExperiencePerInterval[i] += (int) Duration.between(user.accountCreatedAt, currWindowEnd).toDays();
+                }
+            }
+
+            if (teamSizePerInterval[i] > 0) {
+                teamExperiencePerInterval[i] /= teamSizePerInterval[i];
             }
         }
     }
@@ -156,7 +162,7 @@ public class CollaborationMetricsCalculator {
         for(Map.Entry<String, Integer> entry : commitsPerUserSorted) {
             currCommits += entry.getValue();
             // If we reach the 80% threshold, the next developers are no longer core
-            if(((double) currCommits / totalCommits) > 0.8) {
+            if(((double) currCommits / totalCommits) > CORE_CONTRIBUTORS_FRACTION_THRESHOLD) {
                 coreContributors.add(entry.getKey());
                 break;
             }

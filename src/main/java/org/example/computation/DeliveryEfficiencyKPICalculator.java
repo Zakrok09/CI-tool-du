@@ -158,9 +158,11 @@ public class DeliveryEfficiencyKPICalculator {
         int[] numReleasesPerInterval = computeDeliveryFrequency(repo, windowStart, windowEnd, intervalSize);
 
         for(Release r : repo.releases) {
-            int index = (int) Duration.between(windowStart, r.publishedAt).dividedBy(intervalSize);
-            long avgClt = totalCltPerRelease.get(r) / numCommitsPerRelease.get(r);
-            avgCltPerInterval[index] += avgClt;
+            if(totalCltPerRelease.containsKey(r) && numCommitsPerRelease.containsKey(r)) {
+                int index = (int) Duration.between(windowStart, r.publishedAt).dividedBy(intervalSize);
+                long avgClt = totalCltPerRelease.get(r) / numCommitsPerRelease.get(r);
+                avgCltPerInterval[index] += avgClt;
+            }
         }
 
         for(int i = 0; i < intervalCnt; i++) {
