@@ -10,6 +10,7 @@ config.properties
 repos/**
 clones/**
 intake/**
+cache/**
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
@@ -17,6 +18,7 @@ intake/**
 .idea/compiler.xml
 .idea/libraries/
 .idea/inspectionProfiles
+.idea/vcs.xml
 *.iws
 *.iml
 *.ipr

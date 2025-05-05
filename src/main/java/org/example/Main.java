@@ -1,5 +1,6 @@
 package org.example;
 
+import okhttp3.Cache;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jgit.api.Git;
@@ -13,6 +14,7 @@ import org.example.fetching.FetchFromJSON;
 import org.example.utils.GitHubAPIAuthHelper;
 import org.kohsuke.github.GitHub;
 
+import java.io.File;
 import java.io.IOException;
 
 public class Main {
