@@ -10,18 +10,22 @@ import java.util.List;
 
 public class Issue extends GitHubObject implements Serializable {
 
-    public List<IssueComment> comments;
-    public Instant createdAt;
+    public boolean isBug;
     public Instant closedAt;
+    public List<IssueComment> comments;
 
     public Issue() {}
 
     public Issue(GHIssue issue) throws IOException {
         super(issue);
+        
+        // TODO: Should other labels be considered? E.g., "incident", "type/bug"
+        // Could also try some regex where the label contains "bug" but does not contain "fix"
+        // TODO: Should we include a field to mark if the issue is a pull request? i.e., do we consider open PR with label "bug" for defect count
+        isBug = issue.getLabels().stream().anyMatch(label -> label.getName().equals("bug"));
+        closedAt = issue.getClosedAt();
 
         comments = DataExtractor.extractIssueComments(issue);
-        createdAt = issue.getCreatedAt();
-        closedAt = issue.getClosedAt();
     }
 
 

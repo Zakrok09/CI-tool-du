@@ -27,6 +27,7 @@ public class Repository extends GitHubObject implements Serializable {
     public List<Issue> issues;
 
     public List<Release> releases;
+    public List<CheckRun> checkRuns;
 
     public Repository() {}
 
@@ -44,5 +45,9 @@ public class Repository extends GitHubObject implements Serializable {
         issues = DataExtractor.extractIssues(repo);
 
         releases = DataExtractor.extractReleases(repo);
+
+        // TODO: Should we extract check runs for all repositories the same way we do for PRs, issues, ....
+        // OR Do we create a method getCheckRuns() which will use APICatcher and we call it for each repository when calculating CFR?
+        checkRuns = DataExtractor.extractCheckRuns(repo); 
     }
 }

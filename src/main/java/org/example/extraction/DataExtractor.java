@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DataExtractor {
+    // TODO: Implement dataCutoof for each method?
+
     public static List<PullRequest> extractPullRequests(GHRepository repo) throws IOException {
         List<PullRequest> prs = new ArrayList<>();
         for (GHPullRequest p : repo.queryPullRequests().state(GHIssueState.ALL).list()) {
@@ -58,5 +60,17 @@ public class DataExtractor {
         }
 
         return comments;
+    }
+
+    public static List<CheckRun> extractCheckRuns(GHRepository repo) throws IOException {
+        List<CheckRun> checkRuns = new ArrayList<>();
+        for (GHCommit commit : repo.queryCommits().from(repo.getDefaultBranch()).list()) {
+            // Important: If there are more than 1000 check suites on a single git reference, this endpoint will limit check runs to the 1000 most recent check suites
+            for (GHCheckRun checkRun : commit.getCheckRuns()) {
+                checkRuns.add(new CheckRun(checkRun));
+            }
+        }
+
+        return checkRuns;
     }
 }
