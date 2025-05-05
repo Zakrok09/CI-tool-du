@@ -11,7 +11,7 @@ import org.example.data.Repository;
 public class DataComputor {
     
     /**
-     * Compute defect counts for a list of repositories for a specified number of
+     * Compute defect counts for a signle repository for a specified number of
      * intervals with a given size.
      * Defects are issues with the isBug flag set to true.
      * Issues which are created before the start of the first interval are still
@@ -19,14 +19,14 @@ public class DataComputor {
      * The output file is named "defectCount_<intervalSize>_<intervalCount>.csv" and
      * saved in the "kpis" directory.
      * 
-     * @param repos         List of repositories to compute defect counts for.
+     * @param repos         The repository to compute defect counts for.
      * @param intervalSize  Size of each interval.
      * @param intervalCount Number of intervals to compute.
      * 
      * @throws IllegalArgumentException if intervalCount is less than 1.
      * @throws IOException              on failed write of data.
      * 
-     * @apiNote Example: computeDefectCount(repos, Duration.ofDays(7), 4) will
+     * @apiNote Example: computeDefectCount(repo, Duration.ofDays(7), 4) will
      *          compute defect counts for 4 intervals of 7 days each.
      *          The intervals will be computed from the last updatedAt of the
      *          repository, going back in time.
@@ -145,6 +145,21 @@ public class DataComputor {
     // TODO: Should we take a look at revert commits as well?
     // TODO: Is it correct to look at check runs? Or should it be check suites /
     // deployments?
+    /**
+     * Compute change failure rate (CFR) for a single repository
+     * for a specified number of intervals with a given size.
+     * Failures are check runs with conclusion "failure".
+     * Only check runs which were completed after the window start are counted.
+     * 
+     * @param repo          The repository to compute CFR for.
+     * @param intervalSize  Size of each interval.
+     * @param intervalCount Number of intervals to compute.
+     * 
+     * @apiNote Example: computeCFR(repo, Duration.ofDays(7), 4) will compute CFR
+     *          for 4 intervals of 7 days each.
+     *          The intervals will be computed from the last updatedAt of the
+     *          repository, going back in time.
+     */
     public static Double[] computeCFR(Repository repo, Duration intervalSize, int intervalCount) {
         Instant windowEnd = repo.updatedAt; // TODO: Maybe use a different end point? e.g.: last issue updatedAt
         Instant windowStart = windowEnd.minus(intervalSize.multipliedBy(intervalCount));
