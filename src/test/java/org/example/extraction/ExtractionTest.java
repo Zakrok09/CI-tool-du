@@ -8,7 +8,6 @@ import org.example.fetching.CachedGitCloner;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -16,15 +15,20 @@ public class ExtractionTest {
 
     @Test
     public void test1() throws IOException, GitAPIException {
-        Git gitRepo = CachedGitCloner.getGit("FinalProjectPhotoContestOrg/PhotoContestProject");
+        Git gitRepo = CachedGitCloner.getGit("kafka-ops/julie");
         RepoRetrospect repoRetrospect = new RepoRetrospect(gitRepo);
 
         JGitCommitSampler sampler = new JGitCommitSampler(gitRepo.getRepository());
 
         TestCounter testCounter = new JUnitTestCounter();
-        repoRetrospect
-                .walkSampledCommits(sampler.sampleCommitsWithDuration(Duration.ofDays(1L)), testCounter)
-                .forEach(System.out::println);
+
+        System.out.println(
+                testCounter.countUnitTestsAtCommit(gitRepo.getRepository().getDirectory().getParentFile(),
+                        sampler.sampleAllCommits().getFirst())
+        );
+//        repoRetrospect
+//                .walkSampledCommits(sampler.sampleCommitsWithDuration(Duration.ofDays(1L)), testCounter)
+//                .forEach(System.out::println);
 
         assertEquals(5, 5);
     }

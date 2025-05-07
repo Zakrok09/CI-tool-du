@@ -70,7 +70,7 @@ public class RepoRetrospect {
         for (RevCommit commit : sampled) {
             try {
                 checkout(commit);
-                int testCount = counter.countUnitTestsAtCommit(repoGit.getRepository().getDirectory(), commit);
+                int testCount = counter.countUnitTestsAtCommit(repoGit.getRepository().getDirectory().getParentFile(), commit);
                 results.add(new CommitPair<>(commit, testCount));
             } catch (GitAPIException e) {
                 restore();

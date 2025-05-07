@@ -59,5 +59,4 @@ public class JGitCommitSampler {
         start.forEach(results::add);
         return results;
     }
-
 }
