@@ -1,6 +1,5 @@
 package org.example.data;
 
-import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHUser;
 
 import java.io.IOException;
@@ -11,13 +10,11 @@ public class User implements Serializable {
 
     public String name;
     public Instant accountCreatedAt;
-    public boolean isCollaborator;
 
     public User() {}
 
-    public User(GHUser user, GHRepository repo) throws IOException {
-        name = user.getName();
+    public User(GHUser user) throws IOException {
+        name = user.getLogin();
         accountCreatedAt = user.getCreatedAt();
-        isCollaborator = repo.isCollaborator(user);
     }
 }
