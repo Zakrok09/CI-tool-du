@@ -17,7 +17,7 @@ public class Commit implements Serializable {
 
     public Commit(GHCommit commit) throws IOException {
         sha1 = commit.getSHA1();
-        author = new User(commit.getAuthor(), commit.getOwner());
+        author = new User(commit.getAuthor());
         commitDate = commit.getCommitDate();
         linesChanged = commit.getLinesChanged();
     }
