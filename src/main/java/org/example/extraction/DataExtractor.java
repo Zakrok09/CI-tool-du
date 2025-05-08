@@ -4,6 +4,7 @@ import org.example.data.*;
 import org.kohsuke.github.*;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,15 +63,27 @@ public class DataExtractor {
         return comments;
     }
 
-    public static List<CheckRun> extractCheckRuns(GHRepository repo) throws IOException {
-        List<CheckRun> checkRuns = new ArrayList<>();
-        for (GHCommit commit : repo.queryCommits().from(repo.getDefaultBranch()).list()) {
-            // Important: If there are more than 1000 check suites on a single git reference, this endpoint will limit check runs to the 1000 most recent check suites
-            for (GHCheckRun checkRun : commit.getCheckRuns()) {
-                checkRuns.add(new CheckRun(checkRun));
+    public static Object[] extractDeploymentData(GHDeployment d) throws IOException {
+        Object[] data = new Object[2];
+        
+        for (GHDeploymentStatus status : d.listStatuses()) {
+            Instant curr = status.getCreatedAt();
+            if (data[1] == null || curr.isAfter((Instant) data[1])) {
+                data[0] = status.getState().toString();
+                data[1] = curr;
             }
         }
 
-        return checkRuns;
+        return data;
+    }
+
+    public static List<Deployment> extractDeployments(GHRepository repo) throws IOException {
+        List<Deployment> deployments = new ArrayList<>();
+        
+        for (GHDeployment d : repo.listDeployments(null, null, null, null)) {
+            deployments.add(new Deployment(d));
+        }
+
+        return deployments;
     }
 }
