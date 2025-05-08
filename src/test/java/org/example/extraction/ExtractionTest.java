@@ -8,6 +8,7 @@ import org.example.fetching.CachedGitCloner;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -29,7 +30,15 @@ public class ExtractionTest {
 //        repoRetrospect
 //                .walkSampledCommits(sampler.sampleCommitsWithDuration(Duration.ofDays(1L)), testCounter)
 //                .forEach(System.out::println);
+    }
 
-        assertEquals(5, 5);
+    @Test
+    public void test2() throws IOException {
+        Git gitRepo = CachedGitCloner.getGit("withastro/astro");
+        JGitCommitSampler sampler = new JGitCommitSampler(gitRepo.getRepository());
+
+        sampler.sampleCommitsWithDuration(Duration.ofDays(30L), Duration.ofDays(730));
+
+        sampler.printSamplesToCSV("kafka-ops_julie");
     }
 }
