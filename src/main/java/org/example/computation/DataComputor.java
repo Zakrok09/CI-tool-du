@@ -3,9 +3,16 @@ package org.example.computation;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+import org.example.data.Commit;
 import org.example.data.Deployment;
 import org.example.data.Issue;
+import org.example.data.Release;
 import org.example.data.Repository;
 
 public class DataComputor {
@@ -176,5 +183,118 @@ public class DataComputor {
         }
 
         return cfrPerInterval;
+    }
+
+    /**
+     * Computes the delivery frequency per interval, i.e., the number of releases within each interval.
+     * @param repo The repository to compute delivery frequencies for.
+     * @param windowEnd The end of the time window to compute defect counts for.
+     * @param intervalSize Size of each interval.
+     * @param intervalCount Number of intervals to compute.
+     * @return An array containing the delivery frequencies for all intervals.
+     */
+    public static Integer[] computeDeliveryFrequency(Repository repo, Instant windowEnd, Duration intervalSize, int intervalCount) {
+        Instant windowStart = windowEnd.minus(intervalSize.multipliedBy(intervalCount));
+
+        Integer[] numReleasesPerInterval = new Integer[intervalCount];
+
+        for(Release r : repo.releases) {
+            int index = (int) Duration.between(windowStart, r.publishedAt).dividedBy(intervalSize);
+            // Only consider releases published after the start of the window
+            if (index >= 0) {
+                numReleasesPerInterval[index]++;
+            }
+        }
+
+        return numReleasesPerInterval;
+    }
+
+    /**
+     * Computes the delivery sizes per interval, i.e., the changed LOCs between successive intervals.
+     * @param repo The repository to compute delivery sizes for.
+     * @param windowEnd The end of the time window to compute defect counts for.
+     * @param intervalSize Size of each interval.
+     * @param intervalCount Number of intervals to compute.
+     * @return An array containing the delivery sizes for all intervals.
+     */
+    public static Integer[] computeDeliverySize(Repository repo, Instant windowEnd, Duration intervalSize, int intervalCount) {
+        Instant windowStart = windowEnd.minus(intervalSize.multipliedBy(intervalCount));
+
+        Integer[] deliverySizePerInterval = new Integer[intervalCount];
+
+        for(Release r : repo.releases) {
+            int index = (int) Duration.between(windowStart, r.publishedAt).dividedBy(intervalSize);
+            // Only consider releases published after the start of the window
+            if (index >= 0) {
+                deliverySizePerInterval[index] += r.changesFromPrevRelease;
+            }
+        }
+
+        return deliverySizePerInterval;
+    }
+
+    /**
+     * Computes the change lead time (CLT) per interval, i.e., the average duration between commit date and the date of the
+     * first release that includes it.
+     * @param repo The repository to compute CLTs for.
+     * @param windowEnd The end of the time window to compute defect counts for.
+     * @param intervalSize Size of each interval.
+     * @param intervalCount Number of intervals to compute.
+     * @return An array containing the CLTs for all intervals.
+     */
+    public static Double[] computeCLT(Repository repo, Instant windowEnd, Duration intervalSize, int intervalCount) {
+        Map<Release, Long> totalCltPerRelease = new HashMap<>(); // Store CLT per release in minutes
+        Map<Release, Integer> numCommitsPerRelease = new HashMap<>();
+        List<Commit> commitsSorted = new ArrayList<>(repo.commits); // Commits sorted by date in ASC order
+        Collections.reverse(commitsSorted);
+        List<Release> releasesSorted = new ArrayList<>(repo.releases); // Release sorted by date in ASC order
+        Collections.reverse(releasesSorted);
+        int currReleaseIdx = 0;
+
+        for(Commit c : commitsSorted) {
+            // Get first release after the current commit
+            while(currReleaseIdx < releasesSorted.size()
+                    && c.commitDate.isAfter(releasesSorted.get(currReleaseIdx).publishedAt)) {
+                currReleaseIdx++;
+            }
+
+            // All subsequent commits are unreleased
+            if(currReleaseIdx == releasesSorted.size()) {
+                break;
+            }
+
+            // Add duration between commit and release to current release CLT
+            totalCltPerRelease.merge(releasesSorted.get(currReleaseIdx),
+                    Duration.between(c.commitDate, releasesSorted.get(currReleaseIdx).publishedAt).toMinutes(),
+                    Long::sum);
+            numCommitsPerRelease.merge(releasesSorted.get(currReleaseIdx),
+                    1,
+                    Integer::sum);
+        }
+        
+        Instant windowStart = windowEnd.minus(intervalSize.multipliedBy(intervalCount));
+
+        Double[] avgCltPerInterval = new Double[intervalCount];
+        Integer[] numReleasesPerInterval = computeDeliveryFrequency(repo, windowEnd, intervalSize, intervalCount);
+
+        // Compute CLTs per release
+        for(Release r : repo.releases) {
+            if(totalCltPerRelease.containsKey(r) && numCommitsPerRelease.containsKey(r)) {
+                int index = (int) Duration.between(windowStart, r.publishedAt).dividedBy(intervalSize);
+                // Only consider releases published after the start of the window
+                if (index >= 0) {
+                    double avgClt = (double) totalCltPerRelease.get(r) / numCommitsPerRelease.get(r);
+                    // Add the per-release CLT to the current per-interval CLT
+                    avgCltPerInterval[index] += avgClt;
+                }
+            }
+        }
+
+        // Compute CLTs per interval
+        for(int i = 0; i < intervalCount; i++) {
+            avgCltPerInterval[i] /= (numReleasesPerInterval[i] > 0) ? numReleasesPerInterval[i] : 1;
+        }
+
+        return avgCltPerInterval;
     }
 }

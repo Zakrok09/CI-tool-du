@@ -1,12 +1,12 @@
 package org.example.data;
 
+import org.eclipse.jgit.api.Git;
 import org.example.extraction.DataExtractor;
 import org.kohsuke.github.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 public class Repository extends GitHubObject implements Serializable {
@@ -44,10 +44,17 @@ public class Repository extends GitHubObject implements Serializable {
         pullRequests = DataExtractor.extractPullRequests(repo);
         issues = DataExtractor.extractIssues(repo);
 
-        releases = DataExtractor.extractReleases(repo);
+        releases = DataExtractor.extractReleases(repo, commits.get(commits.size() - 1));
 
         // TODO: Should we extract check runs for all repositories the same way we do for PRs, issues, ....
         // OR Do we create a method getCheckRuns() which will use APICatcher and we call it for each repository when calculating CFR?
         deployments = DataExtractor.extractDeployments(repo); 
+    }
+
+    public Git getGit() throws IOException {
+        File output = new File("clones", fullName.replace("/", "_"));
+
+        if (output.exists()) return Git.open(output);
+        else throw new RuntimeException("Getting git of a not cloned repo");
     }
 }
