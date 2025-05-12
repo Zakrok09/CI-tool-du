@@ -31,7 +31,7 @@ public class Main {
         GitHub gh = GitHubAPIAuthHelper.getGitHubAPI();
         logger.info("Starting script");
 
-        exampleGet10MergesToMainGeit(gh);
+        // exampleGet10MergesToMainGeit(gh);
 
         // edit these numbers before running
         // FetchFromJSON.fetch(gh, 10, 3);
