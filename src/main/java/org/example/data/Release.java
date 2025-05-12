@@ -18,20 +18,16 @@ public class Release extends GitHubObject implements Serializable {
 
     public Release() {}
 
-    public Release(GHRelease release, GHRelease prevRelease) throws IOException {
+    public Release(GHRelease release, String prevTag) throws IOException {
         super(release);
 
         publishedAt = release.getPublishedAt();
         tagName = release.getTagName();
-        changesFromPrevRelease = getNumChangesFromPrevRelease(prevRelease);
+        changesFromPrevRelease = getNumChangesFromPrevRelease(release.getOwner(), prevTag);
     }
 
-    private int getNumChangesFromPrevRelease(GHRelease prev) throws IOException {
-        if(prev == null) {
-            return 0;
-        }
-
-        GHCompare compare = prev.getOwner().getCompare(prev.getTagName(), tagName);
+    private int getNumChangesFromPrevRelease(GHRepository repo, String prevTag) throws IOException {
+        GHCompare compare = repo.getCompare(prevTag, tagName);
 
         return Arrays.stream(compare.getFiles())
                 .mapToInt(GHCommit.File::getLinesChanged)
