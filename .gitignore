@@ -56,3 +56,6 @@ build/
 .data/
 logs/
 kpis/
+sampled_workflow_runs
+sampled_commits
+repos
