@@ -1,12 +1,17 @@
 package org.example.extraction;
 
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.example.data.*;
+import org.example.utils.Helper;
 import org.kohsuke.github.*;
 import org.kohsuke.github.GHIssueQueryBuilder.Sort;
 
 import io.github.cdimascio.dotenv.Dotenv;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -31,7 +36,8 @@ public class DataExtractor {
 
     public static List<Issue> extractIssues(GHRepository repo) throws IOException {
         List<Issue> issues = new ArrayList<>();
-        for  (GHIssue i : repo.queryIssues().since(dateCutoff).state(GHIssueState.ALL).sort(Sort.CREATED).direction(GHDirection.DESC).list()) {
+        for (GHIssue i : repo.queryIssues().since(dateCutoff).state(GHIssueState.ALL).sort(Sort.CREATED)
+                .direction(GHDirection.DESC).list()) {
             issues.add(new Issue(i));
         }
 
@@ -51,11 +57,11 @@ public class DataExtractor {
             }
         });
 
-        for  (int i = 0; i < ghReleases.size() - 1; i++) {
+        for (int i = 0; i < ghReleases.size() - 1; i++) {
             releases.add(new Release(ghReleases.get(i), ghReleases.get(i + 1).getTagName()));
         }
 
-        if(!ghReleases.isEmpty()) {
+        if (!ghReleases.isEmpty()) {
             releases.add(new Release(ghReleases.get(ghReleases.size() - 1), initCommit.sha1));
         }
 
@@ -64,7 +70,7 @@ public class DataExtractor {
 
     public static List<Commit> extractCommits(GHRepository repo) throws IOException {
         List<Commit> commits = new ArrayList<>();
-        for  (GHCommit c : repo.queryCommits().since(dateCutoff).list()) {
+        for (GHCommit c : repo.queryCommits().since(dateCutoff).list()) {
             commits.add(new Commit(c));
         }
 
@@ -74,7 +80,7 @@ public class DataExtractor {
     public static List<IssueComment> extractIssueComments(GHIssue issue) throws IOException {
         List<IssueComment> comments = new ArrayList<>();
 
-        for(GHIssueComment comment : issue.queryComments().since(dateCutoff).list()) {
+        for (GHIssueComment comment : issue.queryComments().since(dateCutoff).list()) {
             comments.add(new IssueComment(comment));
         }
 
@@ -83,7 +89,7 @@ public class DataExtractor {
 
     public static Object[] extractDeploymentData(GHDeployment d) throws IOException {
         Object[] data = new Object[2];
-        
+
         for (GHDeploymentStatus status : d.listStatuses()) {
             Instant curr = status.getCreatedAt();
             if (data[1] == null || curr.isAfter((Instant) data[1])) {
@@ -97,11 +103,34 @@ public class DataExtractor {
 
     public static List<Deployment> extractDeployments(GHRepository repo) throws IOException {
         List<Deployment> deployments = new ArrayList<>();
-        
+
         for (GHDeployment d : repo.listDeployments(null, null, null, null)) {
             deployments.add(new Deployment(d));
         }
 
         return deployments;
+    }
+
+    public static DocumentationStats extractDocumentationStats(GHCommit commit) throws IOException {
+        DocumentationStats stats = new DocumentationStats();
+
+        commit.listFiles().forEach(file -> {
+            String fileName = file.getFileName();
+            if (Helper.FILES_TO_CHECK.containsKey(fileName)) {
+                int ind = Helper.FILES_TO_CHECK.get(fileName);
+                stats.documentationFiles[ind].exists = true;
+                stats.documentationFiles[ind].additions = (int) file.getLinesAdded();
+                stats.documentationFiles[ind].deletions = (int) file.getLinesDeleted();
+            }
+        });
+
+        for (String fileName : Helper.FILES_TO_CHECK.keySet()) {
+            int ind = Helper.FILES_TO_CHECK.get(fileName);
+            if (stats.documentationFiles[ind].exists) {
+                stats.documentationFiles[ind].size = (int) commit.getTree().getEntry(fileName).getSize();
+            }
+        }
+
+        return stats;
     }
 }

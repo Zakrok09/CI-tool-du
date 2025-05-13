@@ -10,6 +10,7 @@ import org.eclipse.jgit.revwalk.RevWalk;
 import org.example.computation.DataComputor;
 import org.example.computation.DataSaver;
 import org.example.data.Repository;
+import org.example.extraction.DataExtractor;
 import org.example.fetching.CachedDataRepoFetcher;
 import org.example.fetching.CachedGitCloner;
 import org.example.fetching.FetchFromJSON;
@@ -31,7 +32,7 @@ public class Main {
         GitHub gh = GitHubAPIAuthHelper.getGitHubAPI();
         logger.info("Starting script");
 
-        // exampleGet10MergesToMainGeit(gh);
+        exampleGet10MergesToMainGeit(gh);
 
         // edit these numbers before running
         // FetchFromJSON.fetch(gh, 10, 3);
@@ -43,7 +44,7 @@ public class Main {
         // traverse commits to the default branch
         // and print the first 10
         // TL;DR get last 10 merges to main
-        Repository geitRepo = CachedDataRepoFetcher.getRepoData(gh, "aipotheosis-labs/aci");
+        Repository geitRepo = CachedDataRepoFetcher.getRepoData(gh, "aipotheosis-labs/aci", true);
         // Git geit = CachedGitCloner.getGit("kelhaji/geit");
 
 
@@ -73,6 +74,6 @@ public class Main {
         // DataSaver.<Double>saveData("MTTR", Instant.now(), Duration.ofDays(365), 5, List.of(geitRepo), DataComputor::computeMTTR);
 
         // Example CFRs
-        DataSaver.<Double>saveData("CFR", Instant.now(), Duration.ofDays(365), 5, List.of(geitRepo), DataComputor::computeCFR);
+        // DataSaver.<Double>saveData("CFR", Instant.now(), Duration.ofDays(365), 5, List.of(geitRepo), DataComputor::computeCFR);
     }
 }

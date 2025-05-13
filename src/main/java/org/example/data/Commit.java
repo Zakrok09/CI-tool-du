@@ -1,5 +1,6 @@
 package org.example.data;
 
+import org.example.extraction.DataExtractor;
 import org.kohsuke.github.GHCommit;
 
 import java.io.IOException;
@@ -12,6 +13,7 @@ public class Commit implements Serializable {
     public User author;
     public Instant commitDate;
     public int linesChanged;
+    public DocumentationStats documentationStats;
 
     public Commit() {}
 
@@ -20,5 +22,6 @@ public class Commit implements Serializable {
         author = new User(commit.getAuthor());
         commitDate = commit.getCommitDate();
         linesChanged = commit.getLinesChanged();
+        documentationStats = DataExtractor.extractDocumentationStats(commit);
     }
 }
