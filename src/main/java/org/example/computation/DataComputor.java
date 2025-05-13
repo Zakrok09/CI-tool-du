@@ -154,12 +154,12 @@ public class DataComputor {
 
         List<Issue> issues = repo.issues;
 
-        // assumes issues are sorted on created date
+        // assumes issues are sorted on created date descendingly -> from newest to oldest
         for (Issue issue : issues) {
             Instant created_at = issue.createdAt;
 
-            // if it is before the currently pointed release then it is about the next one
-            if (created_at.isBefore(releases.get(r_pointer).publishedAt)) r_pointer++;
+            // Keep walking backwards until we find a release which is published before the issue is created
+            while (created_at.isBefore(releases.get(r_pointer).publishedAt)) r_pointer++;
 
             if (issue.isBug) failures_per_release[r_pointer]++; // TODO: Possibly add time cutoff since CFR could be too big
         }
@@ -171,7 +171,7 @@ public class DataComputor {
         Instant walk = windowEnd;
         int interval_pointer = 0;
 
-        // assuming sorted from newest to oldest
+        // assuming releases are sorted from newest to oldest
         for (int r = 0; r < releases.size(); r++) {
             Instant interval_start = walk.minus(intervalSize);
 

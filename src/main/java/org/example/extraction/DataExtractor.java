@@ -2,6 +2,7 @@ package org.example.extraction;
 
 import org.example.data.*;
 import org.kohsuke.github.*;
+import org.kohsuke.github.GHIssueQueryBuilder.Sort;
 
 import io.github.cdimascio.dotenv.Dotenv;
 
@@ -30,7 +31,7 @@ public class DataExtractor {
 
     public static List<Issue> extractIssues(GHRepository repo) throws IOException {
         List<Issue> issues = new ArrayList<>();
-        for  (GHIssue i : repo.queryIssues().since(dateCutoff).state(GHIssueState.ALL).list()) {
+        for  (GHIssue i : repo.queryIssues().since(dateCutoff).state(GHIssueState.ALL).sort(Sort.CREATED).direction(GHDirection.DESC).list()) {
             issues.add(new Issue(i));
         }
 
@@ -40,6 +41,15 @@ public class DataExtractor {
     public static List<Release> extractReleases(GHRepository repo, Commit initCommit) throws IOException {
         List<Release> releases = new ArrayList<>();
         List<GHRelease> ghReleases = repo.listReleases().toList();
+
+        ghReleases.sort((r1, r2) -> {
+            try {
+                return r2.getCreatedAt().compareTo(r1.getCreatedAt());
+            } catch (IOException e) {
+                e.printStackTrace();
+                return 0;
+            }
+        });
 
         for  (int i = 0; i < ghReleases.size() - 1; i++) {
             releases.add(new Release(ghReleases.get(i), ghReleases.get(i + 1).getTagName()));
