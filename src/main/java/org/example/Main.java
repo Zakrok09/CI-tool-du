@@ -19,6 +19,7 @@ import org.kohsuke.github.GitHub;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
 import javax.xml.crypto.Data;
@@ -30,13 +31,11 @@ public class Main {
         GitHub gh = GitHubAPIAuthHelper.getGitHubAPI();
         logger.info("Starting script");
 
-        //exampleGet10MergesToMainGeit(gh);
+        // exampleGet10MergesToMainGeit(gh);
 
-        //edit these numbers before running
-        FetchFromJSON.fetch(gh, 10, 3);
+        // edit these numbers before running
+        // FetchFromJSON.fetch(gh, 10, 3);
     }
-
-
 
     private static void exampleGet10MergesToMainGeit(GitHub gh) throws IOException {
         // Small example usage
@@ -68,12 +67,12 @@ public class Main {
         // }
 
         // Example defect counts
-        // DataSaver.<Integer>saveData("defectCount", Duration.ofDays(365), 5, List.of(geitRepo), DataComputor::computeDefectCount);
+        // DataSaver.<Integer>saveData("defectCount", Instant.now(), Duration.ofDays(365), 5, List.of(geitRepo), DataComputor::computeDefectCount);
 
         // Example MTTRs
-        // DataSaver.<Double>saveData("MTTR", Duration.ofDays(365), 5, List.of(geitRepo), DataComputor::computeMTTR);
+        // DataSaver.<Double>saveData("MTTR", Instant.now(), Duration.ofDays(365), 5, List.of(geitRepo), DataComputor::computeMTTR);
 
         // Example CFRs
-        // DataSaver.<Double>saveData("CFR", Duration.ofDays(365), 5, List.of(geitRepo), DataComputor::computeCFR);
+        DataSaver.<Double>saveData("CFR", Instant.now(), Duration.ofDays(365), 5, List.of(geitRepo), DataComputor::computeCFR);
     }
 }
