@@ -1,6 +1,7 @@
 package org.example.data;
 
 import org.kohsuke.github.GHCommit;
+import org.kohsuke.github.GHPullRequestCommitDetail;
 
 import java.io.IOException;
 import java.io.Serializable;

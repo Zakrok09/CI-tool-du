@@ -5,6 +5,7 @@ import org.kohsuke.github.GHPullRequest;
 import java.io.IOException;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.List;
 
 public class PullRequest extends GitHubObject implements Serializable {
     public boolean isMerged;
@@ -12,6 +13,7 @@ public class PullRequest extends GitHubObject implements Serializable {
     public int commitCount;
     public int reviewCount;
     public int commentCount;
+    public List<String> commitShas;
 
     public PullRequest() {}
 
@@ -22,5 +24,6 @@ public class PullRequest extends GitHubObject implements Serializable {
         commitCount = pr.getCommits();
         reviewCount = pr.listReviews().toList().size();
         commentCount = pr.getCommentsCount();
+        commitShas = pr.listCommits().toList().stream().map(x -> x.getCommit().getTree().getSha()).toList();
     }
 }

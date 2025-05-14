@@ -2,6 +2,7 @@ package org.example.fetching;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.utils.GitHubAPIAuthHelper;
 import org.kohsuke.github.GitHub;
 
 import java.io.File;
@@ -24,18 +25,19 @@ public class FetchFromJSON {
         return urls;
     }
 
-    public static List<String> fetch(GitHub gh, int limit, int offset) throws IOException {
+    public List<String> fetch(int limit, int offset) throws IOException {
         long start = System.nanoTime();
         logger.info("Fetching {} projects.", limit);
         List<String> projects = loadProjectsFromFile().stream().skip(offset).limit(limit).toList();
         projects.forEach(logger::debug);
+        GitHubAPIAuthHelper ghHelper = new GitHubAPIAuthHelper();
 
         projects.parallelStream().forEach(project -> {
             try {
                 // it might not be a great idea to parallelize API stuff.
                 // what could possibly go wrong
                 CachedGitCloner.getGit(project);
-                CachedDataRepoFetcher.getRepoData(gh, project);
+                CachedDataRepoFetcher.getRepoData(ghHelper.getNextGH(), project);
                 logger.info("{} downloaded successfully.", project);
             } catch (IOException e) {
                 throw new RuntimeException(e);
