@@ -9,6 +9,8 @@ import org.kohsuke.github.GHIssueQueryBuilder.Sort;
 
 import io.github.cdimascio.dotenv.Dotenv;
 
+import static org.example.Main.logger;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -18,6 +20,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class DataExtractor {
     // .emv example: DATE_CUTOFF=2024-01-01T00:00:00.00Z
@@ -47,15 +50,6 @@ public class DataExtractor {
     public static List<Release> extractReleases(GHRepository repo, Commit initCommit) throws IOException {
         List<Release> releases = new ArrayList<>();
         List<GHRelease> ghReleases = repo.listReleases().toList();
-
-        ghReleases.sort((r1, r2) -> {
-            try {
-                return r2.getCreatedAt().compareTo(r1.getCreatedAt());
-            } catch (IOException e) {
-                e.printStackTrace();
-                return 0;
-            }
-        });
 
         for (int i = 0; i < ghReleases.size() - 1; i++) {
             releases.add(new Release(ghReleases.get(i), ghReleases.get(i + 1).getTagName()));
@@ -114,22 +108,30 @@ public class DataExtractor {
     public static DocumentationStats extractDocumentationStats(GHCommit commit) throws IOException {
         DocumentationStats stats = new DocumentationStats();
 
-        commit.listFiles().forEach(file -> {
-            String fileName = file.getFileName();
+        commit.getTree().getTree().forEach(entry -> {
+            String[] split = entry.getPath().split("/");
+            String fileName = split[split.length - 1];
             if (Helper.FILES_TO_CHECK.containsKey(fileName)) {
                 int ind = Helper.FILES_TO_CHECK.get(fileName);
                 stats.documentationFiles[ind].exists = true;
+                try {
+                    stats.documentationFiles[ind].size = (int) Helper.countLines(entry.readAsBlob());
+                } catch (IOException e) {
+                    logger.info("[DataExtractor] Error reading file entry: " + e.getMessage());
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+
+        commit.listFiles().forEach(file -> {
+            String[] split = file.getFileName().split("/");
+            String fileName = split[split.length - 1];
+            if (Helper.FILES_TO_CHECK.containsKey(fileName)) {
+                int ind = Helper.FILES_TO_CHECK.get(fileName);
                 stats.documentationFiles[ind].additions = (int) file.getLinesAdded();
                 stats.documentationFiles[ind].deletions = (int) file.getLinesDeleted();
             }
         });
-
-        for (String fileName : Helper.FILES_TO_CHECK.keySet()) {
-            int ind = Helper.FILES_TO_CHECK.get(fileName);
-            if (stats.documentationFiles[ind].exists) {
-                stats.documentationFiles[ind].size = (int) commit.getTree().getEntry(fileName).getSize();
-            }
-        }
 
         return stats;
     }

@@ -32,6 +32,7 @@ public class CachedDataRepoFetcher {
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        mapper.registerModule(new com.fasterxml.jackson.datatype.jdk8.Jdk8Module());
 
         String repoFileName = repoName.replace('/', '_') + ".json";
         File output = new File("repos", repoFileName);
