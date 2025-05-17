@@ -77,7 +77,7 @@ public class JGitCommitSampler {
         Path dir = Paths.get("sampled_commits");
         if (Files.notExists(dir)) Files.createDirectory(dir);
 
-        Path file = dir.resolve(fileName + ".csv");
+        Path file = dir.resolve(fileName.replace("/", "_") + ".csv");
         Files.write(
                 file,
                 sampledCommits.stream().map(c -> c.getName() + " " + Instant.ofEpochSecond(c.getCommitTime())).toList(),

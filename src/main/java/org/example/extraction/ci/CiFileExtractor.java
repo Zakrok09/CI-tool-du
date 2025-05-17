@@ -1,8 +1,6 @@
 package org.example.extraction.ci;
 
-import org.kohsuke.github.GHContent;
-import org.kohsuke.github.GHRepository;
-import org.kohsuke.github.GitHub;
+import org.kohsuke.github.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -35,14 +33,18 @@ public class CiFileExtractor {
         GHRepository repository = gh.getRepository(repoName);
         List<CIWorkflow> res = new ArrayList<>();
 
-        for (var workflow : repository.listWorkflows()) {
-            GHContent workflowGHContent = repository.getFileContent(workflow.getPath());
-            String file_content = get_file_content(workflowGHContent);
+        List<GHWorkflow> workflows = repository.listWorkflows().toList();
+        workflows = workflows.stream()
+                .filter(w -> hasMoreThanNRuns(w, 10))
+                .toList();
 
-            CIContentParser parser = new CIContentParser();
+        for (var workflow : workflows) {
+            String file_content = getFileContent(repository.getFileContent(workflow.getPath()));
 
-            Map<String, Integer> triggers = parser.parseWorkflow(file_content);
+            CIContentParser parser = new CIContentParser(file_content);
+            if (!parser.isExecutingTests()) continue;
 
+            Map<String, Integer> triggers = parser.parseWorkflow();
             List<String> triggersList = triggers.entrySet()
                     .stream().filter(e -> e.getValue() > 0)
                     .map(Map.Entry::getKey)
@@ -54,7 +56,16 @@ public class CiFileExtractor {
         return res;
     }
 
-    private String get_file_content(GHContent ghContent) throws IOException {
+    private boolean hasMoreThanNRuns(GHWorkflow ghWorkflow, int n) {
+        int i = 0;
+        for (GHWorkflowRun ignored : ghWorkflow.listRuns()) {
+            i++;
+            if (i > n) return true;
+        }
+        return false;
+    }
+
+    private String getFileContent(GHContent ghContent) throws IOException {
         InputStream is = ghContent.read();
         BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
         return reader.lines().collect(Collectors.joining("\n"));

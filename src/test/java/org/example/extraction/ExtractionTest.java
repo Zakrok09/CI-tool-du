@@ -53,7 +53,9 @@ public class ExtractionTest {
         CiFileExtractor ciFileExtractor = new CiFileExtractor(gh, "withastro/astro");
         ciFileExtractor.getWorkflows().forEach(w -> {
             System.out.println(w.getName());
-            w.getTriggers().forEach(System.out::println);
+            System.out.println(new CIContentParser(w.getFileContent()).isExecutingTests());
+            w.getTriggers().forEach(a -> System.out.println("\t" + a));
+            System.out.println("\n\n");
         });
     }
 }
