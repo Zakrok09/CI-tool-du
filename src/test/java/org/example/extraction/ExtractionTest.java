@@ -2,10 +2,14 @@ package org.example.extraction;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.example.extraction.ci.CIContentParser;
+import org.example.extraction.ci.CiFileExtractor;
 import org.example.extraction.testcounter.JUnitTestCounter;
 import org.example.extraction.testcounter.TestCounter;
 import org.example.fetching.CachedGitCloner;
+import org.example.utils.GitHubAPIAuthHelper;
 import org.junit.jupiter.api.Test;
+import org.kohsuke.github.GitHub;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -40,5 +44,16 @@ public class ExtractionTest {
         sampler.sampleCommitsWithDuration(Duration.ofDays(30L), Duration.ofDays(730));
 
         sampler.printSamplesToCSV("kafka-ops_julie");
+    }
+
+    @Test
+    public void test3() throws IOException {
+        GitHub gh = GitHubAPIAuthHelper.getGitHubAPI();
+
+        CiFileExtractor ciFileExtractor = new CiFileExtractor(gh, "withastro/astro");
+        ciFileExtractor.getWorkflows().forEach(w -> {
+            System.out.println(w.getName());
+            w.getTriggers().forEach(System.out::println);
+        });
     }
 }
