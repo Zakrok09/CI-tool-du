@@ -1,28 +1,18 @@
 package org.example;
 
-import okhttp3.Cache;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.revwalk.RevCommit;
-import org.eclipse.jgit.revwalk.RevWalk;
 import org.example.computation.DataComputor;
 import org.example.computation.DataSaver;
 import org.example.data.Repository;
 import org.example.fetching.CachedDataRepoFetcher;
-import org.example.fetching.CachedGitCloner;
-import org.example.fetching.FetchFromJSON;
 import org.example.utils.GitHubAPIAuthHelper;
 import org.kohsuke.github.GitHub;
 
-import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-
-import javax.xml.crypto.Data;
 
 public class Main {
     public static final Logger logger = LogManager.getLogger(Main.class);
