@@ -24,4 +24,16 @@ public class WorkflowRun extends GitHubObject implements Serializable {
         status = run.getStatus();
         commit_id = run.getHeadCommit().getId();
     }
+
+    public String toCSV() {
+        return String.format("%d;%s;%s;%s;%s;%d;%s;%s\n",
+                id,
+                createdAt.toString(),
+                updatedAt.toString(),
+                name,
+                start_time.toString(),
+                triggererId,
+                commit_id,
+                status.toString());
+    }
 }

@@ -28,8 +28,8 @@ public class CIWorkflowRunExtractor {
      */
     public void saveTestWorkflowRuns(String repoName, int workflowId) {
         Path dir = Paths.get("sampled_workflow_runs");
-        Path tempFile = dir.resolve(repoName.replace("/", "_") + "-" + workflowId + ".tmp.json");
-        Path outputFile = dir.resolve(repoName.replace("/", "_") + "-" + workflowId + ".json");
+        Path tempFile = dir.resolve(repoName.replace("/", "_") + "-" + workflowId + ".tmp.csv");
+        Path outputFile = dir.resolve(repoName.replace("/", "_") + "-" + workflowId + ".csv");
 
         if (Files.exists(outputFile)) {
             logger.info("Workflow Runs for {}'s {} found. Skipping...", repoName, workflowId);
@@ -39,13 +39,11 @@ public class CIWorkflowRunExtractor {
         try {
             if (Files.notExists(dir)) Files.createDirectory(dir);
 
-            ObjectMapper mapper = getObjectMapper();
-
             Instant cutoff = Instant.parse("2024-05-08T12:00:00Z");
             GHRepository repo = gh.getRepository(repoName);
             PagedIterable<GHWorkflowRun> runs = repo.getWorkflow(workflowId).listRuns();
 
-            writeRunsToFileWithTemp(tempFile, runs, cutoff, mapper);
+            writeRunsToFileWithTemp(tempFile, runs, cutoff);
 
             Files.move(tempFile, outputFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
             System.out.println("Saved " + repoName + " with workflow runs.");
@@ -61,27 +59,21 @@ public class CIWorkflowRunExtractor {
         return mapper;
     }
 
-    private static void writeRunsToFileWithTemp(Path tempFile, PagedIterable<GHWorkflowRun> runs, Instant cutoff, ObjectMapper mapper) throws IOException {
+    private static void writeRunsToFileWithTemp(Path tempFile, PagedIterable<GHWorkflowRun> runs, Instant cutoff) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(tempFile, StandardOpenOption.CREATE)) {
-            writer.write("[\n");
+            writer.write("id;createdAt;updatedAt;name;start_time;triggererId;commit_id;status\n");
 
-            boolean first = true;
             for (GHWorkflowRun run : runs) {
                 if (run.getCreatedAt().isBefore(cutoff)) break;
                 System.out.println(run.getRunStartedAt() + " " + run.getWorkflowId() + " " + run.getName());
                 try {
                     WorkflowRun runData = new WorkflowRun(run);
-                    if (!first) writer.write(",\n");
-                    writer.write(mapper.writeValueAsString(runData));
-                    first = false;
-                    writer.write(mapper.writeValueAsString(runData));
-                    writer.newLine();
+                    writer.write(runData.toCSV() + "\n");
                 } catch (Exception e) {
                     System.err.println("Error processing run " + run.getId() + ": " + e.getMessage());
                 }
             }
 
-            writer.write("\n]");
             writer.flush();
         }
     }
