@@ -3,50 +3,43 @@ package org.example.extraction.ci;
 import org.kohsuke.github.GHWorkflow;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.List;
 
 public class CIWorkflow {
     private final String name;
-    private final String file_name;
+    private final GHWorkflow workflow;
     private final String file_content;
-    private final Instant created_at;
-    private final Instant updated_at;
 
     /* todo: make this use an enum */
     private final List<String> triggers;
 
-    public CIWorkflow(GHWorkflow workflow, String file_content, List<String> triggers) throws IOException {
+    public CIWorkflow(GHWorkflow workflow, String file_content, List<String> triggers) {
         name = workflow.getName();
-        this.file_name = workflow.getPath();
+        this.workflow = workflow;
         this.file_content = file_content;
-        created_at = workflow.getCreatedAt();
-        updated_at = workflow.getUpdatedAt();
         this.triggers = triggers;
+    }
+
+    public String toCSV() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(name).append(";").append(workflow.getId()).append(";").append(workflow.getPath()).append(";");
+        for (String trigger : triggers) sb.append(trigger).append(",");
+        return sb.toString();
     }
 
     public String getName() {
         return name;
     }
 
-    public String getFilename() {
-        return file_name;
-    }
-
     public String getFileContent() {
         return file_content;
     }
 
-    public Instant getCreatedAt() {
-        return created_at;
-    }
-
-    public Instant getUpdatedAt() {
-        return updated_at;
+    public GHWorkflow getWorkflow() {
+        return workflow;
     }
 
     public List<String> getTriggers() {
-        return triggers
-                ;
+        return triggers;
     }
 }

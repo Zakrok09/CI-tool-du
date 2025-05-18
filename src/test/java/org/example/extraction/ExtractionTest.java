@@ -3,7 +3,7 @@ package org.example.extraction;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.example.extraction.ci.CIContentParser;
-import org.example.extraction.ci.CiFileExtractor;
+import org.example.extraction.ci.CIWorkflowExtractor;
 import org.example.extraction.testcounter.JUnitTestCounter;
 import org.example.extraction.testcounter.TestCounter;
 import org.example.fetching.CachedGitCloner;
@@ -14,12 +14,10 @@ import org.kohsuke.github.GitHub;
 import java.io.IOException;
 import java.time.Duration;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 public class ExtractionTest {
 
     @Test
-    public void test1() throws IOException, GitAPIException {
+    public void test1() throws IOException {
         Git gitRepo = CachedGitCloner.getGit("kafka-ops/julie");
         RepoRetrospect repoRetrospect = new RepoRetrospect(gitRepo);
 
@@ -50,8 +48,8 @@ public class ExtractionTest {
     public void test3() throws IOException {
         GitHub gh = GitHubAPIAuthHelper.getGitHubAPI();
 
-        CiFileExtractor ciFileExtractor = new CiFileExtractor(gh, "withastro/astro");
-        ciFileExtractor.getWorkflows().forEach(w -> {
+        CIWorkflowExtractor ciFileExtractor = new CIWorkflowExtractor(gh, "withastro/astro");
+        ciFileExtractor.getValidWorkflows().forEach(w -> {
             System.out.println(w.getName());
             System.out.println(new CIContentParser(w.getFileContent()).isExecutingTests());
             w.getTriggers().forEach(a -> System.out.println("\t" + a));
