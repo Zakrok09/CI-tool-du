@@ -57,6 +57,7 @@ build/
 logs/
 kpis/
 sampled_workflow_runs
+sampled_workflows
 sampled_commits
 repos
 clones

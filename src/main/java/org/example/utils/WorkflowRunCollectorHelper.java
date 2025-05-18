@@ -1,6 +1,6 @@
 package org.example.utils;
 
-import org.example.extraction.ci.CIWorkflowRunWriter;
+import org.example.extraction.ci.CIWorkflowRunExtractor;
 import org.kohsuke.github.GitHub;
 
 import java.io.BufferedReader;
@@ -33,7 +33,7 @@ public class WorkflowRunCollectorHelper {
                     }
 
                     try {
-                        CIWorkflowRunWriter extractor = new CIWorkflowRunWriter(gh);
+                        CIWorkflowRunExtractor extractor = new CIWorkflowRunExtractor(gh);
                         extractor.saveTestWorkflowRuns(repoName, workflowId);
                     } catch (Exception e) {
                         logger.error("Exception while saving data for {}: {}", repoName, e.getMessage());

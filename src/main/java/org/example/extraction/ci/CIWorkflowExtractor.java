@@ -3,14 +3,13 @@ package org.example.extraction.ci;
 import org.kohsuke.github.*;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+
+import static org.example.Main.logger;
 
 public class CIWorkflowExtractor {
     private final GitHub gh;
@@ -36,39 +35,42 @@ public class CIWorkflowExtractor {
                 .toList();
 
         for (var workflow : workflows) {
-            String file_content = getFileContent(repository.getFileContent(workflow.getPath()));
+            try {
+                CIFileExtractor workflowFile = new CIFileExtractor(workflow);
+                if (workflowFile.isDynamic()) {
+                    logger.info("Skipping dynamic workflow: {}", workflow.getName());
+                    continue;
+                }
 
-            CIContentParser parser = new CIContentParser(file_content);
-            if (!parser.isExecutingTests()) continue;
+                String file_content = workflowFile.getFileContent();
+                CIContentParser parser = new CIContentParser(file_content);
+                CIWorkflow ciWorkflow = parser.produceCIWorkflow(workflow);
 
-            Map<String, Integer> triggers = parser.parseWorkflow();
-            List<String> triggersList = triggers.entrySet()
-                    .stream().filter(e -> e.getValue() > 0)
-                    .map(Map.Entry::getKey)
-                    .toList();
+                if (!ciWorkflow.isExecutingTests()) {
+                    logger.info("Workflow {} is not executing tests. Skipping...", workflow.getName());
+                    continue;
+                }
 
-            res.add(new CIWorkflow(workflow, file_content, triggersList));
+                res.add(ciWorkflow);
+            } catch (IOException e) {
+                logger.error("Failed to read file content for workflow: {}, {}, {}", workflow.getName(), workflow.getPath(), workflow.getHtmlUrl());
+            }
         }
 
         return res;
     }
 
-    public void saveToCSV(List<CIWorkflow> ciWorkflows) throws IOException {
+    /**
+     * Checks if the workflows have been cached in a CSV file.
+     */
+    public boolean isCached() {
         Path dir = Paths.get("sampled_workflows");
-        if (Files.notExists(dir)) Files.createDirectory(dir);
-
+        if (Files.notExists(dir)) {
+            logger.error("Directory {} does not exist. Cannot save workflow runs.", dir);
+            return false;
+        }
         Path outputFile = dir.resolve(repoName.replace("/", "_") + ".csv");
-        if (Files.exists(outputFile)) {
-            System.out.println("Data for " + repoName + " found. Skipping...");
-            return;
-        }
-
-        try (BufferedWriter writer = Files.newBufferedWriter(outputFile)) {
-            writer.write("name;id;path;triggers\n");
-            for (CIWorkflow workflow : ciWorkflows) {
-                writer.write(workflow.toCSV() + "\n");
-            }
-        }
+        return Files.exists(outputFile);
     }
 
     /**
@@ -85,11 +87,5 @@ public class CIWorkflowExtractor {
             if (i > n) return true;
         }
         return false;
-    }
-
-    private String getFileContent(GHContent ghContent) throws IOException {
-        InputStream is = ghContent.read();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
-        return reader.lines().collect(Collectors.joining("\n"));
     }
 }

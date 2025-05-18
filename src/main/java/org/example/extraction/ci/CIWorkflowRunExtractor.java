@@ -16,10 +16,10 @@ import java.time.Instant;
 
 import static org.example.Main.logger;
 
-public class CIWorkflowRunWriter {
+public class CIWorkflowRunExtractor {
     private final GitHub gh;
 
-    public CIWorkflowRunWriter(GitHub gh) {
+    public CIWorkflowRunExtractor(GitHub gh) {
         this.gh = gh;
     }
 
@@ -32,7 +32,7 @@ public class CIWorkflowRunWriter {
         Path outputFile = dir.resolve(repoName.replace("/", "_") + "-" + workflowId + ".json");
 
         if (Files.exists(outputFile)) {
-            logger.info("Data for {} found. Skipping...", repoName);
+            logger.info("Workflow Runs for {}'s {} found. Skipping...", repoName, workflowId);
             return;
         }
 

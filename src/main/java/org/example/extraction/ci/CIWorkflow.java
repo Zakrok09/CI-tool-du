@@ -9,15 +9,17 @@ public class CIWorkflow {
     private final String name;
     private final GHWorkflow workflow;
     private final String file_content;
+    private final boolean isExecutingTests;
 
     /* todo: make this use an enum */
     private final List<String> triggers;
 
-    public CIWorkflow(GHWorkflow workflow, String file_content, List<String> triggers) {
+    public CIWorkflow(GHWorkflow workflow, String file_content, List<String> triggers, boolean isExecutingTests) {
         name = workflow.getName();
         this.workflow = workflow;
         this.file_content = file_content;
         this.triggers = triggers;
+        this.isExecutingTests = isExecutingTests;
     }
 
     public String toCSV() {
@@ -41,5 +43,9 @@ public class CIWorkflow {
 
     public List<String> getTriggers() {
         return triggers;
+    }
+
+    public boolean isExecutingTests() {
+        return isExecutingTests;
     }
 }

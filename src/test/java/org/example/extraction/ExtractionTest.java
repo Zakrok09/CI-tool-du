@@ -1,7 +1,6 @@
 package org.example.extraction;
 
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.GitAPIException;
 import org.example.extraction.ci.CIContentParser;
 import org.example.extraction.ci.CIWorkflowExtractor;
 import org.example.extraction.testcounter.JUnitTestCounter;
@@ -42,18 +41,5 @@ public class ExtractionTest {
         sampler.sampleCommitsWithDuration(Duration.ofDays(30L), Duration.ofDays(730));
 
         sampler.printSamplesToCSV("kafka-ops_julie");
-    }
-
-    @Test
-    public void test3() throws IOException {
-        GitHub gh = GitHubAPIAuthHelper.getGitHubAPI();
-
-        CIWorkflowExtractor ciFileExtractor = new CIWorkflowExtractor(gh, "withastro/astro");
-        ciFileExtractor.getValidWorkflows().forEach(w -> {
-            System.out.println(w.getName());
-            System.out.println(new CIContentParser(w.getFileContent()).isExecutingTests());
-            w.getTriggers().forEach(a -> System.out.println("\t" + a));
-            System.out.println("\n\n");
-        });
     }
 }
