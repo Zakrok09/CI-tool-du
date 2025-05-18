@@ -10,13 +10,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class CiFileExtractor {
     private final GitHub gh;
     private final String repoName;
-    private final static Logger logger = Logger.getLogger(CiFileExtractor.class.getName());
 
     public CiFileExtractor(GitHub gh, String repoName) {
         this.gh = gh;

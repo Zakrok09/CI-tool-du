@@ -59,3 +59,5 @@ kpis/
 sampled_workflow_runs
 sampled_commits
 repos
+clones
+cache
