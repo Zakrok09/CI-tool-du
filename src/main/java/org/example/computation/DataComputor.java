@@ -209,18 +209,24 @@ public class DataComputor {
      */
     public static Integer[] computeDeliveryFrequency(Repository repo, Instant windowEnd, Duration intervalSize, int intervalCount) {
         Instant windowStart = windowEnd.minus(intervalSize.multipliedBy(intervalCount));
+        System.out.println(windowStart);
 
-        Integer[] numReleasesPerInterval = new Integer[intervalCount];
+        int[] numReleasesPerInterval = new int[intervalCount];
+
+        if (repo.releases == null) {
+            return Arrays.stream(numReleasesPerInterval).boxed().toArray(Integer[]::new);
+        }
 
         for(Release r : repo.releases) {
+            System.out.println(r.publishedAt);
             int index = (int) Duration.between(windowStart, r.publishedAt).dividedBy(intervalSize);
-            // Only consider releases published after the start of the window
-            if (index >= 0) {
+            // Only consider releases published after the start of the window and until end
+            if (index >= 0 && index < intervalCount) {
                 numReleasesPerInterval[index]++;
             }
         }
 
-        return numReleasesPerInterval;
+        return Arrays.stream(numReleasesPerInterval).boxed().toArray(Integer[]::new);
     }
 
     /**
@@ -234,17 +240,20 @@ public class DataComputor {
     public static Integer[] computeDeliverySize(Repository repo, Instant windowEnd, Duration intervalSize, int intervalCount) {
         Instant windowStart = windowEnd.minus(intervalSize.multipliedBy(intervalCount));
 
-        Integer[] deliverySizePerInterval = new Integer[intervalCount];
+        int[] deliverySizePerInterval = new int[intervalCount];
 
+        if (repo.releases == null) {
+            return Arrays.stream(deliverySizePerInterval).boxed().toArray(Integer[]::new);
+        }
         for(Release r : repo.releases) {
             int index = (int) Duration.between(windowStart, r.publishedAt).dividedBy(intervalSize);
             // Only consider releases published after the start of the window
-            if (index >= 0) {
+            if (index >= 0 && index < intervalCount) {
                 deliverySizePerInterval[index] += r.changesFromPrevRelease;
             }
         }
 
-        return deliverySizePerInterval;
+        return Arrays.stream(deliverySizePerInterval).boxed().toArray(Integer[]::new);
     }
 
     /**
@@ -288,7 +297,7 @@ public class DataComputor {
 
         Instant windowStart = windowEnd.minus(intervalSize.multipliedBy(intervalCount));
 
-        Double[] avgCltPerInterval = new Double[intervalCount];
+        double[] avgCltPerInterval = new double[intervalCount];
         Integer[] numReleasesPerInterval = computeDeliveryFrequency(repo, windowEnd, intervalSize, intervalCount);
 
         // Compute CLTs per release
@@ -296,7 +305,7 @@ public class DataComputor {
             if(totalCltPerRelease.containsKey(r) && numCommitsPerRelease.containsKey(r)) {
                 int index = (int) Duration.between(windowStart, r.publishedAt).dividedBy(intervalSize);
                 // Only consider releases published after the start of the window
-                if (index >= 0) {
+                if (index >= 0 && index < numReleasesPerInterval.length) {
                     double avgClt = (double) totalCltPerRelease.get(r) / numCommitsPerRelease.get(r);
                     // Add the per-release CLT to the current per-interval CLT
                     avgCltPerInterval[index] += avgClt;
@@ -309,6 +318,6 @@ public class DataComputor {
             avgCltPerInterval[i] /= (numReleasesPerInterval[i] > 0) ? numReleasesPerInterval[i] : 1;
         }
 
-        return avgCltPerInterval;
+        return Arrays.stream(avgCltPerInterval).boxed().toArray(Double[]::new);
     }
 }

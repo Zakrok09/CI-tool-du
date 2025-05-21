@@ -1,7 +1,9 @@
 package org.example.fetching;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.example.data.Repository;
 import org.example.data.WorkflowRun;
@@ -31,12 +33,14 @@ public class CachedDataRepoFetcher {
         logger.info("Getting repo data: {}", repoName);
 
         ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        mapper.registerModule(new Jdk8Module());
 
         String repoFileName = repoName.replace('/', '_') + ".json";
         File output = new File("repos", repoFileName);
         if (output.exists() && !forceUpdate) {
-            logger.debug("{} found locally, getting from cache.", repoName);
+            logger.debug("{} API data found locally.", repoName);
             return mapper.readValue(output, Repository.class);
         }
 

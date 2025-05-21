@@ -46,6 +46,11 @@
             <version>2.18.3</version>
         </dependency>
         <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jdk8</artifactId>
+            <version>2.18.3</version> <!-- match your jackson-databind version -->
+        </dependency>
+        <dependency>
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit</artifactId>
             <version>7.2.0.202503040940-r</version>

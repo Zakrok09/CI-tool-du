@@ -2,21 +2,16 @@ package org.example.data;
 
 import org.eclipse.jgit.api.Git;
 import org.example.extraction.DataExtractor;
+import org.example.fetching.FetchSettings;
 import org.kohsuke.github.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Repository extends GitHubObject implements Serializable {
-    // modify this to change how far into the past to get issues
-    // set low for developing and debugging, high for actual data collection
-//    private final Instant yesterday = Instant.now().minus(1, ChronoUnit.DAYS);
-//    private final Instant oneMonthAgo = Instant.now().minus(30, ChronoUnit.DAYS);
-//    private final Instant all = Instant.MIN;
-//    private final Instant dateCutoff =  oneMonthAgo;
-
     public String defaultBranch;
     public String description;
     public String fullName;
@@ -34,21 +29,23 @@ public class Repository extends GitHubObject implements Serializable {
     public Repository(GHRepository repo) throws IOException {
         super(repo);
 
+        if (!FetchSettings.set)
+            FetchSettings.All();
+
         fullName = repo.getFullName();
         description = repo.getDescription();
         defaultBranch = repo.getDefaultBranch();
-        branches = repo.getBranches().keySet().stream().toList();
 
-        commits = DataExtractor.extractCommits(repo);
+        commits = FetchSettings.commits ? DataExtractor.extractCommits(repo) :  new ArrayList<>();
+        releases = FetchSettings.releases ? DataExtractor.extractReleases(repo, commits.getLast()) : new ArrayList<>();
+        branches = FetchSettings.branches ? repo.getBranches().keySet().stream().toList() : new ArrayList<>();
 
-        pullRequests = DataExtractor.extractPullRequests(repo);
-        issues = DataExtractor.extractIssues(repo);
-
-        releases = DataExtractor.extractReleases(repo, commits.get(commits.size() - 1));
+        pullRequests = FetchSettings.pullRequests ? DataExtractor.extractPullRequests(repo) : new ArrayList<>();
+        issues = FetchSettings.issues ? DataExtractor.extractIssues(repo) : new ArrayList<>();
 
         // TODO: Should we extract check runs for all repositories the same way we do for PRs, issues, ....
         // OR Do we create a method getCheckRuns() which will use APICatcher and we call it for each repository when calculating CFR?
-        deployments = DataExtractor.extractDeployments(repo); 
+        deployments = FetchSettings.deployments ? DataExtractor.extractDeployments(repo) :  new ArrayList<>();
     }
 
     public Git getGit() throws IOException {

@@ -21,9 +21,16 @@ public class Release extends GitHubObject implements Serializable {
     public Release(GHRelease release, String prevTag) throws IOException {
         super(release);
 
-        publishedAt = release.getPublishedAt();
-        tagName = release.getTagName();
-        changesFromPrevRelease = getNumChangesFromPrevRelease(release.getOwner(), prevTag);
+
+        try {
+            publishedAt = release.getPublishedAt();
+            tagName = release.getTagName();
+            changesFromPrevRelease = getNumChangesFromPrevRelease(release.getOwner(), prevTag);
+        } catch (Exception e) {
+            publishedAt = null;
+            tagName = null;
+            changesFromPrevRelease = 0;
+        }
     }
 
     private int getNumChangesFromPrevRelease(GHRepository repo, String prevTag) throws IOException {

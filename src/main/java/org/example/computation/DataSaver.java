@@ -23,7 +23,9 @@ public class DataSaver {
             throw new IllegalArgumentException("Interval count must be at least 1.");
         }
 
-        String fileName = kpi + "_" + windowEnd.toString() + "_" + intervalSize.toString() + "_" + intervalCount + ".csv";
+        String windowEndSanitized = windowEnd.toString().replace(":", "-");
+
+        String fileName = kpi + "_" + windowEndSanitized + "_" + intervalSize.toString() + "_" + intervalCount + ".csv";
         File output = new File("kpis", fileName);
 
         if (!output.getParentFile().exists() && !output.getParentFile().mkdirs()) {

@@ -17,8 +17,13 @@ public class Deployment extends GitHubObject implements Serializable {
     public Deployment(GHDeployment d) throws IOException {
         super(d);
 
-        Object[] data = DataExtractor.extractDeploymentData(d);
-        finalState = (String) data[0];
-        completedAt = data[1] != null ? (Instant) data[1] : null;
+        try {
+            Object[] data = DataExtractor.extractDeploymentData(d);
+            finalState = (String) data[0];
+            completedAt = data[1] != null ? (Instant) data[1] : null;
+        } catch (Exception e) {
+            finalState = null;
+            completedAt = null;
+        }
     }
 }
