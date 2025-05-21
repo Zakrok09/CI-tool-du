@@ -1,5 +1,6 @@
 package org.example.data;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.eclipse.jgit.api.Git;
 import org.example.extraction.DataExtractor;
 import org.example.fetching.FetchSettings;
@@ -37,7 +38,11 @@ public class Repository extends GitHubObject implements Serializable {
         defaultBranch = repo.getDefaultBranch();
 
         commits = FetchSettings.commits ? DataExtractor.extractCommits(repo) :  new ArrayList<>();
-        releases = FetchSettings.releases ? DataExtractor.extractReleases(repo, commits.getLast()) : new ArrayList<>();
+        try {
+            releases = FetchSettings.releases ? DataExtractor.extractReleases(repo, commits.getLast()) : new ArrayList<>();
+        } catch (Exception e) {
+            releases = new ArrayList<>();
+        }
         branches = FetchSettings.branches ? repo.getBranches().keySet().stream().toList() : new ArrayList<>();
 
         pullRequests = FetchSettings.pullRequests ? DataExtractor.extractPullRequests(repo) : new ArrayList<>();
@@ -45,9 +50,10 @@ public class Repository extends GitHubObject implements Serializable {
 
         // TODO: Should we extract check runs for all repositories the same way we do for PRs, issues, ....
         // OR Do we create a method getCheckRuns() which will use APICatcher and we call it for each repository when calculating CFR?
-        deployments = FetchSettings.deployments ? DataExtractor.extractDeployments(repo) :  new ArrayList<>();
+        deployments = FetchSettings.deployments ? DataExtractor.extractDeployments(repo) : new ArrayList<>();
     }
 
+    @JsonIgnore
     public Git getGit() throws IOException {
         File output = new File("clones", fullName.replace("/", "_"));
 
