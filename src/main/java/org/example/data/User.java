@@ -14,7 +14,12 @@ public class User implements Serializable {
     public User() {}
 
     public User(GHUser user) throws IOException {
-        name = (user != null) ? user.getLogin() : null;
-        accountCreatedAt = (user != null) ? user.getCreatedAt() : null;
+        try {
+            name = (user != null) ? user.getLogin() : null;
+            accountCreatedAt = (user != null) ? user.getCreatedAt() : null;
+        } catch (Exception e) {
+            name = null;
+            accountCreatedAt = null;
+        }
     }
 }

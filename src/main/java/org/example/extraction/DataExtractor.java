@@ -49,14 +49,15 @@ public class DataExtractor {
 
     public static List<Release> extractReleases(GHRepository repo, Commit initCommit) throws IOException {
         List<Release> releases = new ArrayList<>();
-        List<GHRelease> ghReleases = repo.listReleases().toList();
+        List<GHRelease> ghReleases_imm = repo.listReleases().toList();
+        ArrayList<GHRelease> ghReleases = new ArrayList<>(ghReleases_imm);
 
         for (int i = 0; i < ghReleases.size() - 1; i++) {
             releases.add(new Release(ghReleases.get(i), ghReleases.get(i + 1).getTagName()));
         }
 
-        if (!ghReleases.isEmpty()) {
-            releases.add(new Release(ghReleases.get(ghReleases.size() - 1), initCommit.sha1));
+        if(!ghReleases.isEmpty()) {
+            releases.add(new Release(ghReleases.getLast(), initCommit.sha1));
         }
 
         return releases;
