@@ -14,6 +14,10 @@ public class IssueComment extends GitHubObject implements Serializable {
     public IssueComment(GHIssueComment issueComment) throws IOException {
         super(issueComment);
 
-        body = issueComment.getBody();
+        try {
+            body = issueComment.getBody();
+        } catch (Exception e) {
+            body = null;
+        }
     }
 }

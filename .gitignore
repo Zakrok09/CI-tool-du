@@ -7,10 +7,10 @@ target/
 config.properties
 
 ### local repo cache
-repos/**
-clones/**
-intake/**
-cache/**
+repos*/
+clones*/
+intake*/
+cache*/
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

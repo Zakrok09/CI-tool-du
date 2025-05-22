@@ -17,12 +17,21 @@ public class WorkflowRun extends GitHubObject implements Serializable {
     public WorkflowRun(GHWorkflowRun run) throws IOException {
         super(run);
 
-        name = run.getName();
-        id = run.getId();
-        start_time = run.getRunStartedAt();
-        triggererId = run.getTriggeringActor().getId();
-        status = run.getStatus();
-        commit_id = run.getHeadCommit().getId();
+        try {
+            name = run.getName();
+            id = run.getId();
+            start_time = run.getRunStartedAt();
+            triggererId = run.getTriggeringActor().getId();
+            status = run.getStatus();
+            commit_id = run.getHeadCommit().getId();
+        } catch (Exception e) {
+            name = null;
+            start_time = null;
+            triggererId = -1;
+            id = -1;
+            status = null;
+            commit_id = null;
+        }
     }
 
     public WorkflowRun() {}

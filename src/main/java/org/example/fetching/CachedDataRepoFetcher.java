@@ -1,6 +1,10 @@
 package org.example.fetching;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.example.data.Repository;
 import org.kohsuke.github.GitHub;
 
@@ -23,24 +27,26 @@ public class CachedDataRepoFetcher {
         logger.info("Getting repo data: {}", repoName);
 
         ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        mapper.registerModule(new com.fasterxml.jackson.datatype.jdk8.Jdk8Module());
 
         String repoFileName = repoName.replace('/', '_') + ".json";
         File output = new File("repos", repoFileName);
         if (output.exists() && !forceUpdate) {
-            logger.debug("{} found locally, getting from cache.", repoName);
+            logger.debug("{} API data found locally.", repoName);
             return mapper.readValue(output, Repository.class);
+        }
+
+        if(!output.getParentFile().exists() && !output.getParentFile().mkdirs()) {
+            logger.error("Failed to create directories, necessary to save repo data.");
+            throw new RemoteException("Error `.mkdirs()`. Directories not created.");
         }
 
         logger.debug("{} not found or forced update, getting from GitHub.", repoName);
         Repository repo = new Repository(gh.getRepository(repoName));
 
         logger.info("Done reading from API, writing to file.");
-
-        if(!output.getParentFile().exists() && !output.getParentFile().mkdirs()) {
-            logger.error("Failed to create directories, necessary to save repo data.");
-            throw new RemoteException("Error `.mkdirs()`. Directories not created.");
-        }
 
         mapper.writerWithDefaultPrettyPrinter()
                 .writeValue(output, repo);

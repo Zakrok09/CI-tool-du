@@ -1,18 +1,26 @@
 package org.example.extraction;
 
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.example.data.*;
+import org.example.utils.Helper;
 import org.kohsuke.github.*;
 import org.kohsuke.github.GHIssueQueryBuilder.Sort;
 
 import io.github.cdimascio.dotenv.Dotenv;
 
+import static org.example.Main.logger;
+
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class DataExtractor {
     // .emv example: DATE_CUTOFF=2024-01-01T00:00:00.00Z
@@ -31,7 +39,8 @@ public class DataExtractor {
 
     public static List<Issue> extractIssues(GHRepository repo) throws IOException {
         List<Issue> issues = new ArrayList<>();
-        for  (GHIssue i : repo.queryIssues().since(dateCutoff).state(GHIssueState.ALL).sort(Sort.CREATED).direction(GHDirection.DESC).list()) {
+        for (GHIssue i : repo.queryIssues().since(dateCutoff).state(GHIssueState.ALL).sort(Sort.CREATED)
+                .direction(GHDirection.DESC).list()) {
             issues.add(new Issue(i));
         }
 
@@ -40,23 +49,15 @@ public class DataExtractor {
 
     public static List<Release> extractReleases(GHRepository repo, Commit initCommit) throws IOException {
         List<Release> releases = new ArrayList<>();
-        List<GHRelease> ghReleases = repo.listReleases().toList();
+        List<GHRelease> ghReleases_imm = repo.listReleases().toList();
+        ArrayList<GHRelease> ghReleases = new ArrayList<>(ghReleases_imm);
 
-        ghReleases.sort((r1, r2) -> {
-            try {
-                return r2.getCreatedAt().compareTo(r1.getCreatedAt());
-            } catch (IOException e) {
-                e.printStackTrace();
-                return 0;
-            }
-        });
-
-        for  (int i = 0; i < ghReleases.size() - 1; i++) {
+        for (int i = 0; i < ghReleases.size() - 1; i++) {
             releases.add(new Release(ghReleases.get(i), ghReleases.get(i + 1).getTagName()));
         }
 
         if(!ghReleases.isEmpty()) {
-            releases.add(new Release(ghReleases.get(ghReleases.size() - 1), initCommit.sha1));
+            releases.add(new Release(ghReleases.getLast(), initCommit.sha1));
         }
 
         return releases;
@@ -64,7 +65,7 @@ public class DataExtractor {
 
     public static List<Commit> extractCommits(GHRepository repo) throws IOException {
         List<Commit> commits = new ArrayList<>();
-        for  (GHCommit c : repo.queryCommits().since(dateCutoff).list()) {
+        for (GHCommit c : repo.queryCommits().since(dateCutoff).list()) {
             commits.add(new Commit(c));
         }
 
@@ -74,7 +75,7 @@ public class DataExtractor {
     public static List<IssueComment> extractIssueComments(GHIssue issue) throws IOException {
         List<IssueComment> comments = new ArrayList<>();
 
-        for(GHIssueComment comment : issue.queryComments().since(dateCutoff).list()) {
+        for (GHIssueComment comment : issue.queryComments().since(dateCutoff).list()) {
             comments.add(new IssueComment(comment));
         }
 
@@ -83,7 +84,7 @@ public class DataExtractor {
 
     public static Object[] extractDeploymentData(GHDeployment d) throws IOException {
         Object[] data = new Object[2];
-        
+
         for (GHDeploymentStatus status : d.listStatuses()) {
             Instant curr = status.getCreatedAt();
             if (data[1] == null || curr.isAfter((Instant) data[1])) {
@@ -97,11 +98,42 @@ public class DataExtractor {
 
     public static List<Deployment> extractDeployments(GHRepository repo) throws IOException {
         List<Deployment> deployments = new ArrayList<>();
-        
+
         for (GHDeployment d : repo.listDeployments(null, null, null, null)) {
             deployments.add(new Deployment(d));
         }
 
         return deployments;
+    }
+
+    public static DocumentationStats extractDocumentationStats(GHCommit commit) throws IOException {
+        DocumentationStats stats = new DocumentationStats();
+
+        commit.getTree().getTree().forEach(entry -> {
+            String[] split = entry.getPath().split("/");
+            String fileName = split[split.length - 1];
+            if (Helper.FILES_TO_CHECK.containsKey(fileName)) {
+                int ind = Helper.FILES_TO_CHECK.get(fileName);
+                stats.documentationFiles[ind].exists = true;
+                try {
+                    stats.documentationFiles[ind].size = (int) Helper.countLines(entry.readAsBlob());
+                } catch (IOException e) {
+                    logger.info("[DataExtractor] Error reading file entry: " + e.getMessage());
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+
+        commit.listFiles().forEach(file -> {
+            String[] split = file.getFileName().split("/");
+            String fileName = split[split.length - 1];
+            if (Helper.FILES_TO_CHECK.containsKey(fileName)) {
+                int ind = Helper.FILES_TO_CHECK.get(fileName);
+                stats.documentationFiles[ind].additions = (int) file.getLinesAdded();
+                stats.documentationFiles[ind].deletions = (int) file.getLinesDeleted();
+            }
+        });
+
+        return stats;
     }
 }
