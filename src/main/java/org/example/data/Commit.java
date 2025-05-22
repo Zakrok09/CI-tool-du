@@ -1,5 +1,6 @@
 package org.example.data;
 
+import org.example.extraction.DataExtractor;
 import org.example.fetching.FetchSettings;
 import org.kohsuke.github.GHCommit;
 
@@ -13,6 +14,7 @@ public class Commit implements Serializable {
     public User author;
     public Instant commitDate;
     public int linesChanged;
+    public DocumentationStats documentationStats;
 
     public Commit() {}
 
@@ -22,6 +24,7 @@ public class Commit implements Serializable {
             author = FetchSettings.users ? new User(commit.getAuthor()) : null;
             commitDate = commit.getCommitDate();
             linesChanged = commit.getLinesChanged();
+            documentationStats = DataExtractor.extractDocumentationStats(commit);
         } catch (Exception e) {
             sha1 = null;
             author = null;
