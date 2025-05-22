@@ -40,7 +40,8 @@ public class DataExtractor {
 
     public static List<Release> extractReleases(GHRepository repo, Commit initCommit) throws IOException {
         List<Release> releases = new ArrayList<>();
-        List<GHRelease> ghReleases = repo.listReleases().toList();
+        List<GHRelease> ghReleases_imm = repo.listReleases().toList();
+        ArrayList<GHRelease> ghReleases = new ArrayList<>(ghReleases_imm);
 
         ghReleases.sort((r1, r2) -> {
             try {
@@ -56,7 +57,7 @@ public class DataExtractor {
         }
 
         if(!ghReleases.isEmpty()) {
-            releases.add(new Release(ghReleases.get(ghReleases.size() - 1), initCommit.sha1));
+            releases.add(new Release(ghReleases.getLast(), initCommit.sha1));
         }
 
         return releases;

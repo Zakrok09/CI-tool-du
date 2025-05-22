@@ -13,7 +13,7 @@ public class CachedGitCloner {
         File output = new File("clones", repoName.replace("/", "_"));
 
         if (output.exists() && !forceUpdate) {
-            logger.debug("{} found locally, getting from cache.", repoName);
+            logger.debug("{} Git clone found locally..", repoName);
             return Git.open(output);
         }
 
