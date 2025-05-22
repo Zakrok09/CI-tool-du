@@ -1,5 +1,6 @@
 package org.example.utils;
 
+import org.example.extraction.ci.CIWorkflowRunExtractor;
 import org.kohsuke.github.GitHub;
 
 import java.io.BufferedReader;
@@ -9,7 +10,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static org.example.Main.logger;
-import static org.example.fetching.CachedDataRepoFetcher.saveTestWorkflowRuns;
 
 public class WorkflowRunCollectorHelper {
 
@@ -33,7 +33,8 @@ public class WorkflowRunCollectorHelper {
                     }
 
                     try {
-                        saveTestWorkflowRuns(gh, repoName, workflowId);
+                        CIWorkflowRunExtractor extractor = new CIWorkflowRunExtractor(gh);
+                        extractor.saveTestWorkflowRuns(repoName, workflowId);
                     } catch (Exception e) {
                         logger.error("Exception while saving data for {}: {}", repoName, e.getMessage());
                     }
