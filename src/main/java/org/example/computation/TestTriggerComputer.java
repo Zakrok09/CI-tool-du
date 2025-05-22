@@ -36,8 +36,6 @@ public class TestTriggerComputer {
                                 KnownEvent event = KnownEvent.valueOf(trigger.toUpperCase());
                                 frequencies[event.ordinal()]++;
                             });
-
-                    logger.debug("Parsed triggers from file: {}", file.getName());
                 } catch (IOException e) {
                     logger.error("Error reading file: {}, skipping...", file.getName(), e);
                 }
@@ -50,6 +48,25 @@ public class TestTriggerComputer {
         }
 
         return frequencies;
+    }
+
+    public int countWorkflows() {
+        Path dir = Path.of("sampled_workflows");
+        if (!dir.toFile().exists()) throw new RuntimeException("sampled_workflows folder does not exist!");
+        int count = 0;
+
+        for (File file : Objects.requireNonNull(dir.toFile().listFiles())) {
+            if (file.getName().endsWith(".csv")) {
+                logger.debug("Parsing file: {}", file.getName());
+
+                try (var lines = Files.lines(file.toPath())) {
+                    count += lines.skip(1).filter(trigger -> !trigger.trim().isEmpty()).count();
+                } catch (IOException e) {
+                    logger.error("Error reading file: {}, skipping...", file.getName(), e);
+                }
+            }
+        }
+        return count;
     }
 
     private List<String> extractTriggersFromLine(String line) {
