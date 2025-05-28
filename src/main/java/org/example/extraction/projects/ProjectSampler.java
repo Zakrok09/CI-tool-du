@@ -27,7 +27,7 @@ public class ProjectSampler {
                 // .order(GHDirection.DESC)
                 .list();
 
-        List<GHRepository> repos = getFirstN(iterable, 200, 100);
+        List<GHRepository> repos = getFirstN(iterable, 200, 300);
         logger.info("Fetched {} repositories", repos.size());
         logger.info("Filtering on label usage");
         List<GHRepository> filtered = filterOnLabelUsage(repos);
