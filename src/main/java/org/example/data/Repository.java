@@ -48,8 +48,6 @@ public class Repository extends GitHubObject implements Serializable {
         pullRequests = FetchSettings.pullRequests ? DataExtractor.extractPullRequests(repo) : new ArrayList<>();
         issues = FetchSettings.issues ? DataExtractor.extractIssues(repo) : new ArrayList<>();
 
-        // TODO: Should we extract check runs for all repositories the same way we do for PRs, issues, ....
-        // OR Do we create a method getCheckRuns() which will use APICatcher and we call it for each repository when calculating CFR?
         deployments = FetchSettings.deployments ? DataExtractor.extractDeployments(repo) : new ArrayList<>();
     }
 

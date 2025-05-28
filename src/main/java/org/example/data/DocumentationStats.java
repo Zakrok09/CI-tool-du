@@ -7,12 +7,14 @@ import org.example.utils.Helper;
 public class DocumentationStats implements Serializable {
     public DocumentationFile[] documentationFiles;
 
-    public class DocumentationFile implements Serializable {
+    public static class DocumentationFile implements Serializable {
         public String name;
         public int size;
         public boolean exists;
         public int additions;
         public int deletions;
+
+        public DocumentationFile() {}
 
         public DocumentationFile(String name) {
             this.name = name;

@@ -2,6 +2,7 @@ package org.example;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.example.scripts.Daniel;
 import org.example.scripts.Serban;
 
 import java.io.IOException;
@@ -11,6 +12,6 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
         logger.info("Starting script");
-        //Serban.serbanLoad();
+        // Daniel.danielLoad("additional_preliminary");
     }
 }
