@@ -111,7 +111,9 @@ public class DataExtractor {
 
         commit.getTree().getTree().forEach(entry -> {
             String[] split = entry.getPath().split("/");
+            String folder = split.length > 1 ? split[split.length - 2] : "";
             String fileName = split[split.length - 1];
+            
             if (Helper.FILES_TO_CHECK.containsKey(fileName)) {
                 int ind = Helper.FILES_TO_CHECK.get(fileName);
                 stats.documentationFiles[ind].exists = true;
@@ -122,15 +124,43 @@ public class DataExtractor {
                     throw new RuntimeException(e);
                 }
             }
+
+            if (folder.equals("ISSUE_TEMPLATE") && (fileName.endsWith(".md") || fileName.endsWith(".yml"))) {
+                stats.documentationFiles[Helper.FILES_TO_CHECK.size()].exists = true;
+                try {
+                    stats.documentationFiles[Helper.FILES_TO_CHECK.size()].size += (int) Helper.countLines(entry.readAsBlob());
+                } catch (IOException e) {
+                    logger.info("[DataExtractor] Error reading issue template entry: " + e.getMessage());
+                    throw new RuntimeException(e);
+                }
+            } else if (fileName.equals("pull_request_template.md") || (folder.equals("PULL_REQUEST_TEMPLATE") && fileName.endsWith(".md"))) {
+                stats.documentationFiles[Helper.FILES_TO_CHECK.size() + 1].exists = true;
+                try {
+                    stats.documentationFiles[Helper.FILES_TO_CHECK.size() + 1].size += (int) Helper.countLines(entry.readAsBlob());
+                } catch (IOException e) {
+                    logger.info("[DataExtractor] Error reading pull request template entry: " + e.getMessage());
+                    throw new RuntimeException(e);
+                }
+            }
         });
 
         commit.listFiles().forEach(file -> {
             String[] split = file.getFileName().split("/");
+            String folder = split.length > 1 ? split[split.length - 2] : "";
             String fileName = split[split.length - 1];
+            
             if (Helper.FILES_TO_CHECK.containsKey(fileName)) {
                 int ind = Helper.FILES_TO_CHECK.get(fileName);
                 stats.documentationFiles[ind].additions = (int) file.getLinesAdded();
                 stats.documentationFiles[ind].deletions = (int) file.getLinesDeleted();
+            }
+
+            if (folder.equals("ISSUE_TEMPLATE") && (fileName.endsWith(".md") || fileName.endsWith(".yml"))) {
+                stats.documentationFiles[Helper.FILES_TO_CHECK.size()].additions += (int) file.getLinesAdded();
+                stats.documentationFiles[Helper.FILES_TO_CHECK.size()].deletions += (int) file.getLinesDeleted();
+            } else if (fileName.equals("pull_request_template.md") || (folder.equals("PULL_REQUEST_TEMPLATE") && fileName.endsWith(".md"))) {
+                stats.documentationFiles[Helper.FILES_TO_CHECK.size() + 1].additions += (int) file.getLinesAdded();
+                stats.documentationFiles[Helper.FILES_TO_CHECK.size() + 1].deletions += (int) file.getLinesDeleted();
             }
         });
 
