@@ -20,10 +20,11 @@ public class ProjectSampler {
 
         PagedSearchIterable<GHRepository> iterable = gh.searchRepositories()
                 .language("java").language("javascript").language("python")     // only those languages
-                .fork(GHFork.PARENT_ONLY)                                               // no forks
-                .visibility(GHRepository.Visibility.PUBLIC)                             // only public
-                .sort(GHRepositorySearchBuilder.Sort.STARS)
-                .order(GHDirection.DESC)
+                .fork(GHFork.PARENT_ONLY)                                       // no forks
+                .visibility(GHRepository.Visibility.PUBLIC)                     // only public
+                .stars(">49")                                                   // at least 50 stars
+                // .sort(GHRepositorySearchBuilder.Sort.STARS)
+                // .order(GHDirection.DESC)
                 .list();
 
         List<GHRepository> repos = getFirstN(iterable, 200, 100);
@@ -66,13 +67,14 @@ public class ProjectSampler {
      * Filters repositories which have at least 100 issues and 75% of them are labelled.
      */
     public static boolean uses(GHRepository repo) {
-        if (repo.isArchived()) return false;
+        if (repo.isArchived()) return false;                                    // not archived
         logger.info("Checking repo {}", repo.getName());
 
         int issues = 0;
         int labelled = 0;
 
-        for (GHIssue issue : repo.queryIssues().list()) {
+        for (GHIssue issue : repo.queryIssues().state(GHIssueState.ALL).list()) {
+            if (issue.isPullRequest()) continue;                               // skip pull requests
             issues++;
             if (!issue.getLabels().isEmpty()) labelled++;
         }
