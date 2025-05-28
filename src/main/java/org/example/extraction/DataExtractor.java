@@ -1,7 +1,5 @@
 package org.example.extraction;
 
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.GitAPIException;
 import org.example.data.*;
 import org.example.utils.Helper;
 import org.kohsuke.github.*;
@@ -11,16 +9,13 @@ import io.github.cdimascio.dotenv.Dotenv;
 
 import static org.example.Main.logger;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class DataExtractor {
     // .emv example: DATE_CUTOFF=2024-01-01T00:00:00.00Z
