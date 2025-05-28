@@ -23,8 +23,6 @@ public class Issue extends GitHubObject implements Serializable {
     public Issue(GHIssue issue) throws IOException {
         super(issue);
 
-        // Could also try some regex where the label contains "bug" but does not contain "fix"
-        // TODO: Should we include a field to mark if the issue is a pull request? i.e., do we consider open PR with label "bug" for defect count
         try {
             isBug = isBug(issue);
             closedAt = issue.getClosedAt();
