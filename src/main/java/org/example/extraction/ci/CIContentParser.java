@@ -20,7 +20,7 @@ public class CIContentParser {
     private static final
     Map<String, Pattern> testPatterns = Map.of(
             "javascript", Pattern.compile("\\b(pnpm|npm|yarn)\\s+(run\\s+)?test\\b", Pattern.CASE_INSENSITIVE),
-            "python", Pattern.compile("\\b(pytest|python\\s+-m\\s+unittest|tox|uv\\s+run.*tox)\\b", Pattern.CASE_INSENSITIVE),
+            "python", Pattern.compile("\\b(pytest|python\\s+-m\\s+test|unittest|tox|uv\\s+run.*tox)\\b", Pattern.CASE_INSENSITIVE),
             "java", Pattern.compile("\\b(mvnw?|gradle|gradlew)(\\s+[\\w\\-:.=$/{}'!]+)*\\s+(test|verify)\\b", Pattern.CASE_INSENSITIVE)
     );
 
