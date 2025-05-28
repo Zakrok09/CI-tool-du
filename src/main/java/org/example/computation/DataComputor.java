@@ -48,9 +48,9 @@ public class DataComputor {
 
             // For now, issues which were created before the window start are still counted.
             // Issues which are closed before the window start are not counted.
-            if (startIndex < 0)
+            if (startIndex < 0 || startIndex >= intervalCount + 1)
                 startIndex = 0;
-            if (endIndex < 0)
+            if (endIndex < 0 || endIndex >= intervalCount)
                 continue;
 
             ++delta[startIndex];
@@ -67,7 +67,6 @@ public class DataComputor {
         return defectsPerInterval;
     }
 
-    // TODO: Consider CI construction failure?
     /**
      * Compute mean time to recovery (MTTR) from failures for a single repository.
      * Given an endpoint for a time window, goes back a specified number of intervals with a given size.
@@ -98,9 +97,7 @@ public class DataComputor {
             if (closedAt == null || !issue.isBug)
                 continue;
 
-            double solveTime = ((double) Duration.between(createdAt, closedAt).toMillis()) / 1000.0; // TODO: Should we
-                                                                                                     // use seconds or
-                                                                                                     // minutes?
+            double solveTime = ((double) Duration.between(createdAt, closedAt).toMillis()) / 1000.0;
             int startIndex = (int) (Duration.between(windowStart, createdAt).dividedBy(intervalSize));
             int endIndex = (closedAt != null)
                     ? ((int) (Duration.between(windowStart, closedAt).dividedBy(intervalSize)))
@@ -110,7 +107,7 @@ public class DataComputor {
             // Issues which are closed before the window start are not counted.
             if (startIndex < 0)
                 startIndex = 0;
-            if (endIndex < 0)
+            if (endIndex < 0 || endIndex >= intervalCount)
                 continue;
 
             ++countBucket[endIndex];
@@ -209,7 +206,6 @@ public class DataComputor {
      */
     public static Integer[] computeDeliveryFrequency(Repository repo, Instant windowEnd, Duration intervalSize, int intervalCount) {
         Instant windowStart = windowEnd.minus(intervalSize.multipliedBy(intervalCount));
-        System.out.println(windowStart);
 
         int[] numReleasesPerInterval = new int[intervalCount];
 
@@ -218,7 +214,6 @@ public class DataComputor {
         }
 
         for(Release r : repo.releases) {
-            System.out.println(r.publishedAt);
             int index = (int) Duration.between(windowStart, r.publishedAt).dividedBy(intervalSize);
             // Only consider releases published after the start of the window and until end
             if (index >= 0 && index < intervalCount) {

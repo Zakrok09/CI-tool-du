@@ -31,8 +31,8 @@ public class RepoRetrospect {
      * @param <T> the type of the data stored pairwise with the commit
      */
     public static class CommitPair<T> {
-        RevCommit commit;
-        T data;
+        public RevCommit commit;
+        public T data;
 
         public CommitPair(RevCommit commit, T data) {
             this.commit = commit;
