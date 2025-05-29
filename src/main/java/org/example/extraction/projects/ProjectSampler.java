@@ -1,5 +1,8 @@
 package org.example.extraction.projects;
 
+import io.github.cdimascio.dotenv.Dotenv;
+
+import org.apache.commons.lang3.tuple.Pair;
 import org.example.utils.GitHubAPIAuthHelper;
 import org.kohsuke.github.*;
 
@@ -15,27 +18,81 @@ import static org.example.Main.logger;
 
 public class ProjectSampler {
 
+    // public static void main(String[] args) throws IOException {
+    //     GitHub gh = GitHubAPIAuthHelper.getGitHubAPI();
+
+    //     PagedSearchIterable<GHRepository> iterable = gh.searchRepositories()
+    //             .language("java").language("javascript").language("python")     // only those languages
+    //             .fork(GHFork.PARENT_ONLY)                                       // no forks
+    //             .visibility(GHRepository.Visibility.PUBLIC)                     // only public
+    //             .stars(">49")                                                   // at least 50 stars
+    //             .list();
+
+    //     List<GHRepository> repos = new ArrayList<>();
+    //     PagedIterator<GHRepository> iterator = iterable.iterator();
+    //     while (iterator.hasNext()) {
+    //         repos.add(iterator.next());
+    //     }
+
+    //     logger.info("Fetched {} repositories", repos.size());
+    //     writeToFile(Path.of("projects-all.csv"), repos);
+    // }
+
     public static void main(String[] args) throws IOException {
-        GitHub gh = GitHubAPIAuthHelper.getGitHubAPI();
+        int firstN = 100;
+        int skip = 0;
+        int total = firstN - skip;
 
-        PagedSearchIterable<GHRepository> iterable = gh.searchRepositories()
+        int totalTokens = Dotenv.load().get("TOKEN_POOL").split(",").length;
+        int threadsPerToken = 2;
+        int batchSize = total / totalTokens / threadsPerToken;
+
+        GitHubAPIAuthHelper ghHelper = new GitHubAPIAuthHelper();
+        List<Pair<Integer, PagedSearchIterable<GHRepository>>> searchPairs = new ArrayList<>();
+        for (int i = 0; i < totalTokens; ++i) {
+            GitHub gh = ghHelper.getNextGH();
+            for (int j = 0; j < threadsPerToken; ++j) {
+                int index = i * threadsPerToken + j;
+                PagedSearchIterable<GHRepository> iterable = getReposIterable(gh);
+                searchPairs.add(Pair.of(index, iterable));
+            }
+        }
+
+        searchPairs.parallelStream().forEach(pair -> {
+            int index = pair.getKey();
+            PagedSearchIterable<GHRepository> iterable = pair.getValue();
+
+            int start = skip + index * batchSize;
+            int end = (index != totalTokens * threadsPerToken - 1) ? start + batchSize : firstN;
+
+            logger.info("Starting thread for token index {} with start {} and end {}", index, start, end);
+
+            List<GHRepository> repos = getFirstN(iterable, end, start);
+            logger.info("Fetched {} repositories", repos.size());
+            
+            logger.info("Filtering on label usage");
+            List<GHRepository> filtered = filterOnLabelUsage(repos);
+            
+            logger.info("Filtered in {} repositories", filtered.size());
+            filtered.forEach(System.out::println);
+            
+            String fileName = "projects-new-" + start + "-" + end + ".csv";
+            
+            try {
+                writeToFile(Path.of(fileName), filtered);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    public static PagedSearchIterable<GHRepository> getReposIterable(GitHub gh) {
+        return gh.searchRepositories()
                 .language("java").language("javascript").language("python")     // only those languages
-                .fork(GHFork.PARENT_ONLY)                                       // no forks
-                .visibility(GHRepository.Visibility.PUBLIC)                     // only public
-                .stars(">49")                                                   // at least 50 stars
-                // .sort(GHRepositorySearchBuilder.Sort.STARS)
-                // .order(GHDirection.DESC)
+                .fork(GHFork.PARENT_ONLY)                                             // no forks
+                .visibility(GHRepository.Visibility.PUBLIC)                           // only public
+                .stars(">49")                                                       // at least 50 stars
                 .list();
-
-        List<GHRepository> repos = getFirstN(iterable, 200, 100);
-        logger.info("Fetched {} repositories", repos.size());
-        logger.info("Filtering on label usage");
-        List<GHRepository> filtered = filterOnLabelUsage(repos);
-        logger.info("Filtered in {} repositories", filtered.size());
-
-        filtered.forEach(System.out::println);
-
-        writeToFile(Path.of("projects-new.csv"), filtered);
     }
 
     public static List<GHRepository> getFirstN(PagedSearchIterable<GHRepository> iterable, int n, int skip) {
@@ -67,7 +124,10 @@ public class ProjectSampler {
      * Filters repositories which have at least 100 issues and 75% of them are labelled.
      */
     public static boolean uses(GHRepository repo) {
-        if (repo.isArchived()) return false;                                    // not archived
+        if (repo.isArchived()) { // not archived
+            logger.info("Skipping archived repo {}", repo.getName());
+            return false; 
+        }
         logger.info("Checking repo {}", repo.getName());
 
         int issues = 0;
@@ -79,14 +139,14 @@ public class ProjectSampler {
             if (!issue.getLabels().isEmpty()) labelled++;
         }
 
-        logger.debug(repo.getFullName() + " has {} issues and {} labelled", issues, labelled);
+        logger.info(repo.getFullName() + " has {} issues and {} labelled", issues, labelled);
 
         return issues > 100 && (labelled / (double) issues) > 0.75;
     }
 
     private static void writeToFile(Path file, List<GHRepository> repos) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(file, StandardOpenOption.CREATE)) {
-            writer.write("project;");
+            writer.write("project;\n");
 
             for (GHRepository repo : repos)
                 try {

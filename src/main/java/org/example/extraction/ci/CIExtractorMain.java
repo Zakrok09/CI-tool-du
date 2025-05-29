@@ -6,7 +6,9 @@ import org.kohsuke.github.GitHub;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -54,7 +56,12 @@ public class CIExtractorMain {
             try {
                 logger.info("Extracting {} workflows", project);
                 List<CIWorkflow> workflows = ciWorkflowExtractor.getValidWorkflows();
-                saveToCSV(project, workflows);
+
+                if (workflows.isEmpty()) {
+                    saveExcludedToCSV(project);
+                } else {
+                    saveToCSV(project, workflows);
+                }
             } catch (Exception e) {
                 logger.error("Failed to extract workflows for {}: {}", project, e.getMessage());
             }
@@ -81,6 +88,16 @@ public class CIExtractorMain {
             }
         } catch (IOException e) {
             logger.error("Failed to save workflows to CSV: {}", e.getMessage());
+        }
+    }
+
+    private static void saveExcludedToCSV(String project) {
+        try (FileWriter fw = new FileWriter("excluded_by_workflow.csv", true);
+            BufferedWriter bw = new BufferedWriter(fw);
+            PrintWriter out = new PrintWriter(bw)) {
+            out.println(project);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
