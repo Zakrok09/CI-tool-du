@@ -1,19 +1,31 @@
 package org.example.utils;
 
-import io.github.cdimascio.dotenv.Dotenv;
-import okhttp3.Cache;
-import okhttp3.OkHttpClient;
+import static org.example.Main.logger;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
 import org.kohsuke.github.extras.okhttp3.OkHttpGitHubConnector;
 
-import java.io.File;
-import java.io.IOException;
-
-import static org.example.Main.logger;
+import io.github.cdimascio.dotenv.Dotenv;
+import okhttp3.Authenticator;
+import okhttp3.Cache;
+import okhttp3.Credentials;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.Route;
 
 public class GitHubAPIAuthHelper {
     String[] tokens = null;
+    String[] proxies = null;
+    String proxyHost = null;
+    String proxyUser = null;
+    String proxyPass = null;
     int step = 0;
 
     public static GitHub getGitHubAPI() {
@@ -21,7 +33,7 @@ public class GitHubAPIAuthHelper {
 
         try {
             OkHttpClient okHttpClient = new OkHttpClient.Builder()
-                    .cache(new Cache(new File("cache"), 100 * 1024 * 1024)) //100 MB cache
+                    .cache(new Cache(new File("cache"), 100 * 1024 * 1024)) // 100 MB cache
                     .build();
 
             GitHub gh = new GitHubBuilder()
@@ -37,24 +49,53 @@ public class GitHubAPIAuthHelper {
     }
 
     public GitHub getNextGH() {
+        boolean useProxy = false;
+
         if (this.tokens == null) {
             try {
                 this.tokens = Dotenv.load().get("TOKEN_POOL").split(",");
+                this.proxies = Dotenv.load().get("PROXY_POOL").split(",");
+                this.proxyHost = Dotenv.load().get("PROXY_HOST");
+                this.proxyUser = Dotenv.load().get("PROXY_USER");
+                this.proxyPass = Dotenv.load().get("PROXY_PASS");
+                useProxy = Dotenv.load().get("USE_PROXY").equals("true");
             } catch (Exception e) {
-                this.tokens = new String[] {Dotenv.load().get("GITHUB_OAUTH")};
+                this.tokens = new String[] { Dotenv.load().get("GITHUB_OAUTH") };
             }
         }
 
         logger.info("{} tokens loaded.", tokens.length);
 
         try {
-            OkHttpClient okHttpClient = new OkHttpClient.Builder()
-                    .cache(new Cache(new File("cache"), 100 * 1024 * 1024)) //100 MB cache
+            Authenticator proxyAuthenticator = new Authenticator() {
+                @Override
+                public Request authenticate(Route route, Response response) throws IOException {
+                    String credential = Credentials.basic(proxyUser, proxyPass);
+                    return response.request().newBuilder()
+                            .header("Proxy-Authorization", credential)
+                            .build();
+                }
+            };
+
+            int port = Integer.parseInt(proxies[(step++) % proxies.length]);
+
+            OkHttpClient okHttpClient;
+            
+            if (useProxy) {
+                okHttpClient = new OkHttpClient.Builder()
+                    .cache(new Cache(new File("cache"), 100 * 1024 * 1024)) // 100 MB cache
+                    .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, port)))
+                    .proxyAuthenticator(proxyAuthenticator)
                     .build();
+            } else { 
+                okHttpClient = new OkHttpClient.Builder()
+                    .cache(new Cache(new File("cache"), 100 * 1024 * 1024)) // 100 MB cache
+                    .build();
+            }
 
             return new GitHubBuilder()
                     .withConnector(new OkHttpGitHubConnector(okHttpClient))
-                    .withOAuthToken(tokens[(step++)%tokens.length])
+                    .withOAuthToken(tokens[(step++) % tokens.length])
                     .build();
         } catch (IOException e) {
             logger.info("[GH] Error reading TOKEN_POOL env key. Have you set it in .env?");

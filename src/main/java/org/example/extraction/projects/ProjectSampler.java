@@ -38,44 +38,91 @@ public class ProjectSampler {
     //     writeToFile(Path.of("projects-all.csv"), repos);
     // }
 
+    // public static void main(String[] args) throws IOException {
+    //     int firstN = 1000;
+    //     int skip = 950;
+    //     int total = firstN - skip;
+
+    //     int totalTokens = Dotenv.load().get("TOKEN_POOL").split(",").length;
+    //     int threadsPerToken = 1;
+    //     int batchSize = total / totalTokens / threadsPerToken;
+
+    //     GitHubAPIAuthHelper ghHelper = new GitHubAPIAuthHelper();
+    //     List<Pair<Integer, PagedSearchIterable<GHRepository>>> searchPairs = new ArrayList<>();
+    //     for (int i = 0; i < totalTokens; ++i) {
+    //         GitHub gh = ghHelper.getNextGH();
+    //         for (int j = 0; j < threadsPerToken; ++j) {
+    //             int index = i * threadsPerToken + j;
+    //             PagedSearchIterable<GHRepository> iterable = getReposIterable(gh);
+    //             searchPairs.add(Pair.of(index, iterable));
+    //         }
+    //     }
+
+    //     searchPairs.parallelStream().forEach(pair -> {
+    //         int index = pair.getKey();
+    //         PagedSearchIterable<GHRepository> iterable = pair.getValue();
+
+    //         int start = skip + index * batchSize;
+    //         int end = (index != totalTokens * threadsPerToken - 1) ? start + batchSize : firstN;
+
+    //         logger.info("Starting thread for token index {} with start {} and end {}", index, start, end);
+
+    //         List<GHRepository> repos = getFirstN(iterable, end, start);
+    //         logger.info("Fetched {} repositories", repos.size());
+            
+    //         logger.info("Filtering on label usage");
+    //         List<GHRepository> filtered = filterOnLabelUsage(repos);
+            
+    //         logger.info("Filtered in {} repositories", filtered.size());
+            
+    //         String fileName = "projects-new-" + start + "-" + end + ".csv";
+            
+    //         try {
+    //             writeToFile(Path.of(fileName), filtered);
+    //         } catch (IOException e) {
+    //             e.printStackTrace();
+    //         }
+    //     });
+    // }
+
     public static void main(String[] args) throws IOException {
-        int firstN = 100;
-        int skip = 0;
-        int total = firstN - skip;
+        String[] input = new String[] { "elastic/elasticsearch" , "louislam/uptime-kuma" };
 
         int totalTokens = Dotenv.load().get("TOKEN_POOL").split(",").length;
-        int threadsPerToken = 2;
-        int batchSize = total / totalTokens / threadsPerToken;
+        int threadsPerToken = 1;
+        int batchSize = input.length / totalTokens / threadsPerToken;
 
         GitHubAPIAuthHelper ghHelper = new GitHubAPIAuthHelper();
-        List<Pair<Integer, PagedSearchIterable<GHRepository>>> searchPairs = new ArrayList<>();
+        List<Pair<Integer, List<GHRepository>>> searchPairs = new ArrayList<>();
         for (int i = 0; i < totalTokens; ++i) {
             GitHub gh = ghHelper.getNextGH();
             for (int j = 0; j < threadsPerToken; ++j) {
                 int index = i * threadsPerToken + j;
-                PagedSearchIterable<GHRepository> iterable = getReposIterable(gh);
-                searchPairs.add(Pair.of(index, iterable));
+                List<GHRepository> repos = new ArrayList<>();
+
+                for (int k = 0; k < batchSize; ++k) {
+                    repos.add(gh.getRepository(input[index * batchSize + k]));
+                }
+
+                searchPairs.add(Pair.of(index, repos));
             }
         }
 
         searchPairs.parallelStream().forEach(pair -> {
             int index = pair.getKey();
-            PagedSearchIterable<GHRepository> iterable = pair.getValue();
+            List<GHRepository> repos = pair.getValue();
 
-            int start = skip + index * batchSize;
-            int end = (index != totalTokens * threadsPerToken - 1) ? start + batchSize : firstN;
+            int start = index * batchSize;
+            int end = (index != totalTokens * threadsPerToken - 1) ? start + batchSize : input.length;
 
             logger.info("Starting thread for token index {} with start {} and end {}", index, start, end);
-
-            List<GHRepository> repos = getFirstN(iterable, end, start);
-            logger.info("Fetched {} repositories", repos.size());
             
             logger.info("Filtering on label usage");
             List<GHRepository> filtered = filterOnLabelUsage(repos);
             
             logger.info("Filtered in {} repositories", filtered.size());
             
-            String fileName = "projects-new-" + start + "-" + end + ".csv";
+            String fileName = "projects-new-selected-" + start + "-" + end + ".csv";
             
             try {
                 writeToFile(Path.of(fileName), filtered);
