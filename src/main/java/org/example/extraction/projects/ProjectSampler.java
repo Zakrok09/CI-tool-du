@@ -74,7 +74,6 @@ public class ProjectSampler {
             List<GHRepository> filtered = filterOnLabelUsage(repos);
             
             logger.info("Filtered in {} repositories", filtered.size());
-            filtered.forEach(System.out::println);
             
             String fileName = "projects-new-" + start + "-" + end + ".csv";
             
