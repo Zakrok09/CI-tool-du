@@ -53,7 +53,7 @@ public class Daniel {
         GitHubAPIAuthHelper ghHelper = new GitHubAPIAuthHelper();
 
         long start = System.nanoTime();
-        try (ForkJoinPool customPool = new ForkJoinPool(4)) {
+        try (ForkJoinPool customPool = new ForkJoinPool(1)) {
             customPool.submit(() -> {
                 items.parallelStream().forEach(project -> {
                     try {

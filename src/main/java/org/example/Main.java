@@ -2,6 +2,7 @@ package org.example;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.example.fetching.FetchSettings;
 import org.example.scripts.Daniel;
 import org.example.scripts.Serban;
 
@@ -12,6 +13,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
         logger.info("Starting script");
-        // Daniel.danielLoad("additional_preliminary");
+        FetchSettings.Daniel();
+        Daniel.danielLoad("test");
     }
 }

@@ -7,18 +7,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
-import java.util.Map;
 
 public class Helper {
-    // Files to check for documentation data
-    public static final Map<String, Integer> FILES_TO_CHECK = Map.of(
-            "README.md", 0,
-            "CODE_OF_CONDUCT.md", 1,
-            "CONTRIBUTING.md", 2,
-            "LICENSE.md", 3,
-            "SECURITY.md", 4
-    );
-
     public static int countLines(String input) throws IOException {
         if (input == null || input.isEmpty()) {
             return 0;

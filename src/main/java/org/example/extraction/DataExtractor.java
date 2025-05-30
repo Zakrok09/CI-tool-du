@@ -1,8 +1,10 @@
 package org.example.extraction;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.example.data.*;
 import org.example.utils.Helper;
 import org.kohsuke.github.*;
+import org.kohsuke.github.GHCommit.File;
 import org.kohsuke.github.GHIssueQueryBuilder.Sort;
 
 import io.github.cdimascio.dotenv.Dotenv;
@@ -15,7 +17,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DataExtractor {
     // .emv example: DATE_CUTOFF=2024-01-01T00:00:00.00Z
@@ -99,16 +103,115 @@ public class DataExtractor {
         return deployments;
     }
 
-    public static DocumentationStats extractDocumentationStats(GHCommit commit) throws IOException {
-        DocumentationStats stats = new DocumentationStats();
+    public static void putAllInMap(Map<String, Pair<String, GHTreeEntry>> map, GHTree tree, String folder) {
+        tree.getTree().stream().forEach(e -> {
+                map.put(e.getPath(), Pair.of(folder + e.getPath(), e));
+            });
+    }
 
-        commit.getTree().getTree().forEach(entry -> {
-            String[] split = entry.getPath().split("/");
+    public static void fillSearchEntries(Map<String, Pair<String, GHTreeEntry>> map, GHCommit commit) throws IOException {
+        GHTree rootTree = commit.getTree();
+
+        GHTreeEntry docsTreeEntry = rootTree.getEntry("docs");
+        if (docsTreeEntry != null && docsTreeEntry.asTree() != null) {
+            GHTree docsTree = docsTreeEntry.asTree();
+            putAllInMap(map, docsTree, "docs/");
+
+            docsTree.getTree().forEach(entry -> {
+                String[] split = entry.getPath().split("/");
+                String entryName = split[split.length - 1];
+
+                if (entryName.equals("PULL_REQUEST_TEMPLATE")) {
+                    try {
+                        putAllInMap(map, entry.asTree(), "docs/PULL_REQUEST_TEMPLATE/");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        }
+
+        putAllInMap(map, rootTree, "");
+
+        GHTreeEntry prTreeEntry = rootTree.getEntry("PULL_REQUEST_TEMPLATE");
+        if (prTreeEntry != null && prTreeEntry.asTree() != null) {
+            putAllInMap(map, prTreeEntry.asTree(), "PULL_REQUEST_TEMPLATE/");
+        }
+        
+        GHTreeEntry ghTreeEntry = rootTree.getEntry(".github");
+        if (ghTreeEntry != null && ghTreeEntry.asTree() != null) {
+            GHTree ghTree = ghTreeEntry.asTree();
+            putAllInMap(map, ghTree, ".github/");
+
+            ghTree.getTree().forEach(entry -> {
+                String[] split = entry.getPath().split("/");
+                String entryName = split[split.length - 1];
+
+                if (entryName.equals("ISSUE_TEMPLATE")) {
+                    try {
+                        putAllInMap(map, entry.asTree(), ".github/ISSUE_TEMPLATE/");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                if (entryName.equals("PULL_REQUEST_TEMPLATE")) {
+                    try {
+                        putAllInMap(map, entry.asTree(), ".github/PULL_REQUEST_TEMPLATE/");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        }
+    }
+
+    public static void fillSearchFiles(Map<String, File> map, GHCommit commit) throws IOException {
+        Map<String, Integer> folderPrecedence = new HashMap<>();
+        folderPrecedence.put("docs", 1); // Lowest precedence
+        folderPrecedence.put("", 2); // Middle precedence (root folder)
+        folderPrecedence.put(".github", 3); // Highest precedence
+
+        Map<String, Integer> currentFilePrecedenceInMap = new HashMap<>();
+
+        List<File> allFiles = commit.listFiles().toList();
+
+        for (File file : allFiles) {
+            String filePath = file.getFileName();
+            String[] split = filePath.split("/");
+
             String folder = split.length > 1 ? split[split.length - 2] : "";
             String fileName = split[split.length - 1];
+
+            Integer currentPrecedence = folderPrecedence.get(folder);
+
+            if (currentPrecedence != null) {
+                Integer existingPrecedence = currentFilePrecedenceInMap.get(fileName);
+
+                if (existingPrecedence == null || currentPrecedence > existingPrecedence) {
+                    map.put(fileName, file);
+                    currentFilePrecedenceInMap.put(fileName, currentPrecedence);
+                }
+            }
+        }
+    }
+
+    public static DocumentationStats extractDocumentationStats(GHCommit commit) throws IOException {
+        DocumentationStats stats = new DocumentationStats();
+        int n = DocumentationStats.DOC_FILE_LIST.length;
+
+        Map<String, Pair<String, GHTreeEntry>> searchEntries = new HashMap<>();
+        // fillSearchEntries(searchEntries, commit);
+
+        searchEntries.values().forEach(pair -> {
+            String[] split = pair.getKey().split("/");
+            String folder = split.length > 1 ? split[split.length - 2] : "";
+            String fileName = split[split.length - 1];
+
+            GHTreeEntry entry = pair.getValue();
             
-            if (Helper.FILES_TO_CHECK.containsKey(fileName)) {
-                int ind = Helper.FILES_TO_CHECK.get(fileName);
+            if (DocumentationStats.DOC_FILE_MAP.containsKey(fileName)) {
+                int ind = DocumentationStats.DOC_FILE_MAP.get(fileName);
                 stats.documentationFiles[ind].exists = true;
                 try {
                     stats.documentationFiles[ind].size = (int) Helper.countLines(entry.readAsBlob());
@@ -119,17 +222,17 @@ public class DataExtractor {
             }
 
             if (folder.equals("ISSUE_TEMPLATE") && (fileName.endsWith(".md") || fileName.endsWith(".yml"))) {
-                stats.documentationFiles[Helper.FILES_TO_CHECK.size()].exists = true;
+                stats.documentationFiles[n].exists = true;
                 try {
-                    stats.documentationFiles[Helper.FILES_TO_CHECK.size()].size += (int) Helper.countLines(entry.readAsBlob());
+                    stats.documentationFiles[n].size += (int) Helper.countLines(entry.readAsBlob());
                 } catch (IOException e) {
                     logger.info("[DataExtractor] Error reading issue template entry: " + e.getMessage());
                     throw new RuntimeException(e);
                 }
-            } else if (fileName.equals("pull_request_template.md") || (folder.equals("PULL_REQUEST_TEMPLATE") && fileName.endsWith(".md"))) {
-                stats.documentationFiles[Helper.FILES_TO_CHECK.size() + 1].exists = true;
+            } else if (fileName.equalsIgnoreCase("pull_request_template.md") || (folder.equals("PULL_REQUEST_TEMPLATE") && fileName.endsWith(".md"))) {
+                stats.documentationFiles[n + 1].exists = true;
                 try {
-                    stats.documentationFiles[Helper.FILES_TO_CHECK.size() + 1].size += (int) Helper.countLines(entry.readAsBlob());
+                    stats.documentationFiles[n + 1].size += (int) Helper.countLines(entry.readAsBlob());
                 } catch (IOException e) {
                     logger.info("[DataExtractor] Error reading pull request template entry: " + e.getMessage());
                     throw new RuntimeException(e);
@@ -137,23 +240,26 @@ public class DataExtractor {
             }
         });
 
-        commit.listFiles().forEach(file -> {
+        Map<String, File> searchFiles = new HashMap<>();
+        fillSearchFiles(searchFiles, commit);
+
+        searchFiles.values().forEach(file -> {
             String[] split = file.getFileName().split("/");
             String folder = split.length > 1 ? split[split.length - 2] : "";
             String fileName = split[split.length - 1];
             
-            if (Helper.FILES_TO_CHECK.containsKey(fileName)) {
-                int ind = Helper.FILES_TO_CHECK.get(fileName);
+            if (DocumentationStats.DOC_FILE_MAP.containsKey(fileName)) {
+                int ind = DocumentationStats.DOC_FILE_MAP.get(fileName);
                 stats.documentationFiles[ind].additions = (int) file.getLinesAdded();
                 stats.documentationFiles[ind].deletions = (int) file.getLinesDeleted();
             }
 
             if (folder.equals("ISSUE_TEMPLATE") && (fileName.endsWith(".md") || fileName.endsWith(".yml"))) {
-                stats.documentationFiles[Helper.FILES_TO_CHECK.size()].additions += (int) file.getLinesAdded();
-                stats.documentationFiles[Helper.FILES_TO_CHECK.size()].deletions += (int) file.getLinesDeleted();
-            } else if (fileName.equals("pull_request_template.md") || (folder.equals("PULL_REQUEST_TEMPLATE") && fileName.endsWith(".md"))) {
-                stats.documentationFiles[Helper.FILES_TO_CHECK.size() + 1].additions += (int) file.getLinesAdded();
-                stats.documentationFiles[Helper.FILES_TO_CHECK.size() + 1].deletions += (int) file.getLinesDeleted();
+                stats.documentationFiles[n].additions += (int) file.getLinesAdded();
+                stats.documentationFiles[n].deletions += (int) file.getLinesDeleted();
+            } else if (fileName.equalsIgnoreCase("pull_request_template.md") || (folder.equals("PULL_REQUEST_TEMPLATE") && fileName.endsWith(".md"))) {
+                stats.documentationFiles[n + 1].additions += (int) file.getLinesAdded();
+                stats.documentationFiles[n + 1].deletions += (int) file.getLinesDeleted();
             }
         });
 
