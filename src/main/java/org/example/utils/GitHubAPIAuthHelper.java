@@ -77,11 +77,11 @@ public class GitHubAPIAuthHelper {
                 }
             };
 
-            int port = Integer.parseInt(proxies[(step++) % proxies.length]);
 
             OkHttpClient okHttpClient;
             
             if (useProxy) {
+                int port = Integer.parseInt(proxies[(step++) % proxies.length]);
                 okHttpClient = new OkHttpClient.Builder()
                     .cache(new Cache(new File("cache"), 100 * 1024 * 1024)) // 100 MB cache
                     .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, port)))

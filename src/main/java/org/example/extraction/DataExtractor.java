@@ -19,9 +19,7 @@ import java.util.List;
 
 public class DataExtractor {
     // .emv example: DATE_CUTOFF=2024-01-01T00:00:00.00Z
-    public static Instant dateCutoff = LocalDateTime.parse(
-            Dotenv.load().get("DATE_CUTOFF"), DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SS'Z'"))
-            .atZone(ZoneId.of("Europe/Amsterdam")).toInstant();
+    public static Instant dateCutoff = Instant.parse(Dotenv.load().get("DATE_CUTOFF"));
 
     public static List<PullRequest> extractPullRequests(GHRepository repo) throws IOException {
         List<PullRequest> prs = new ArrayList<>();
