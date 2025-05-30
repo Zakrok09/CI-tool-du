@@ -4,6 +4,9 @@ import static org.example.Main.logger;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.github.cdimascio.dotenv.Dotenv;
+
 import org.example.Main;
 import org.example.computation.DataComputor;
 import org.example.computation.DataSaver;
@@ -13,6 +16,7 @@ import org.example.extraction.RepoRetrospect;
 import org.example.fetching.CachedDataRepoFetcher;
 import org.example.fetching.CachedGitCloner;
 import org.example.utils.GitHubAPIAuthHelper;
+import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 
 import java.io.IOException;
@@ -22,9 +26,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
@@ -34,43 +40,58 @@ import java.io.File;
 import java.util.concurrent.CompletableFuture;
 
 import org.example.extraction.RepoRetrospect.CommitPair;
+import org.example.utils.ProjectListOps;
 
 public class Daniel {
 
     public static void danielLoad(String group) throws IOException {
-        String path = "intake/" + group + ".json";
-        String json = Files.readString(Paths.get(path));
+        List<String> input = ProjectListOps.getProjectListFromFile("intake/" + group + ".txt");
 
-        ObjectMapper mapper = new ObjectMapper();
-        List<Object> rawItems = mapper.readValue(json, new TypeReference<>() {
-        });
+        int totalTokens = Dotenv.load().get("TOKEN_POOL").split(",").length;
+        int threadsPerToken = 1;
+        int batchSize = input.size() / totalTokens / threadsPerToken;
+        
+        List<Pair<Integer, List<String>>> searchPairs = new ArrayList<>();
+        for (int i = 0; i < totalTokens; ++i) {
+            for (int j = 0; j < threadsPerToken; ++j) {
+                int index = i * threadsPerToken + j;
+                List<String> repos = new ArrayList<>();
 
-        List<String> items = rawItems.stream()
-                .map(inner -> (String) inner)
-                .limit(50)
-                .toList();
-
-        GitHubAPIAuthHelper ghHelper = new GitHubAPIAuthHelper();
+                for (int k = 0; k < batchSize; ++k) {
+                    repos.add(input.get(index * batchSize + k));
+                }
+                searchPairs.add(Pair.of(index, repos));
+            }
+        }
 
         long start = System.nanoTime();
-        try (ForkJoinPool customPool = new ForkJoinPool(1)) {
-            customPool.submit(() -> {
-                items.parallelStream().forEach(project -> {
-                    try {
+        GitHubAPIAuthHelper ghHelper = new GitHubAPIAuthHelper();
+        searchPairs.parallelStream().forEach(pair -> {
+            int index = pair.getKey();
+            List<String> repos = pair.getValue();
+
+            int startIndex = index * batchSize;
+            int endIndex = (index != totalTokens * threadsPerToken - 1) ? startIndex + batchSize : input.size();
+
+            logger.info("Starting thread for token index {} with start {} and end {}",
+                    index, startIndex, endIndex);
+            repos.forEach(project -> {
+                try {
                         CachedGitCloner.getGit(project);
                         CachedDataRepoFetcher.getRepoData(ghHelper.getNextGH(), project);
                         Main.logger.info("{} downloaded successfully.", project);
                     } catch (Exception e) {
                         System.out.println(e.getMessage());
                     }
-                });
-            }).join();
-        }
+            });
+        });
+
         long end = System.nanoTime();
         long elapsedSeconds = (end - start) / 1_000_000_000;
         long minutes = elapsedSeconds / 60;
-        long seconds = elapsedSeconds % 60;
-        Main.logger.info(String.format("Downloaded 80 projects in %dmin%02dsec.", minutes, seconds));
+        long seconds = elapsedSeconds
+                % 60;
+        Main.logger.info(String.format("Downloaded {} projects in %dmin%02dsec.", input.size(), minutes, seconds));
     }
 
     public static void danielKPI(String group) throws IOException {
