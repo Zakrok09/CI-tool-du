@@ -30,8 +30,8 @@ public class CIExtractorMain {
         saveAllWorkflowRunsFromExtracted(gh, projectNames);
     }
 
-    private static List<String> getProjectsFromCSV() {
-        File csvFile = new File("projects.csv");
+    public static List<String> getProjectsFromCSV(String fileName) {
+        File csvFile = new File(fileName);
         if (!csvFile.exists()) {
             logger.error("projects.csv file does not exist.");
             return List.of();
@@ -43,6 +43,10 @@ public class CIExtractorMain {
             logger.error("Failed to read projects from CSV: {}", e.getMessage());
             return List.of();
         }
+    }
+
+    public static List<String> getProjectsFromCSV() {
+        return getProjectsFromCSV("projects.csv");
     }
 
     public static void extractCIWorkflowsToFiles(GitHub gh, List<String> projectNames) {
