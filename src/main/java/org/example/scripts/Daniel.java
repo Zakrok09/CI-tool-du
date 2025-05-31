@@ -48,7 +48,7 @@ public class Daniel {
         List<String> input = ProjectListOps.getProjectListFromFile("intake/" + group + ".txt");
 
         int totalTokens = Dotenv.load().get("TOKEN_POOL").split(",").length;
-        int threadsPerToken = 1;
+        int threadsPerToken = 2;
         int batchSize = input.size() / totalTokens / threadsPerToken;
         
         List<Pair<Integer, List<String>>> searchPairs = new ArrayList<>();
@@ -91,18 +91,14 @@ public class Daniel {
         long minutes = elapsedSeconds / 60;
         long seconds = elapsedSeconds
                 % 60;
-        Main.logger.info(String.format("Downloaded {} projects in %dmin%02dsec.", input.size(), minutes, seconds));
+        Main.logger.info(String.format("Downloaded %d projects in %dmin%02dsec.", input.size(), minutes, seconds));
     }
 
     public static void danielKPI(String group) throws IOException {
-        String path = "intake/" + group + ".json";
-        String json = Files.readString(Paths.get(path));
-        ObjectMapper mapper = new ObjectMapper();
+        String path = "intake/" + group + ".txt";     
+        List<String> items = ProjectListOps.getProjectListFromFile(path);
 
         GitHubAPIAuthHelper ghHelper = new GitHubAPIAuthHelper();
-
-        List<String> items = mapper.readValue(json, new TypeReference<>() {
-        });
         List<Repository> repos = items.stream().map(project -> {
             try {
                 return CachedDataRepoFetcher.getRepoData(ghHelper.getNextGH(), project);
@@ -111,7 +107,7 @@ public class Daniel {
             }
         }).toList();
 
-        Instant instant = LocalDate.of(2024, 1, 1).atStartOfDay(ZoneOffset.UTC).toInstant();
+        Instant instant = LocalDate.of(2025, 5, 1).atStartOfDay(ZoneOffset.UTC).toInstant();
         Duration duration = Duration.ofDays(30);
         int count = 12;
 

@@ -1,8 +1,14 @@
 package org.example.extraction.ci;
 
+import org.apache.commons.lang3.tuple.Pair;
+import org.example.Main;
 import org.example.computation.TestTriggerComputer;
+import org.example.fetching.CachedDataRepoFetcher;
+import org.example.fetching.CachedGitCloner;
 import org.example.utils.GitHubAPIAuthHelper;
 import org.kohsuke.github.GitHub;
+
+import io.github.cdimascio.dotenv.Dotenv;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -22,12 +28,54 @@ public class CIExtractorMain {
 
     // https://open.spotify.com/track/4RvWPyQ5RL0ao9LPZeSouE?si=f4e83e3f85714521
     public static void main(String[] args) {
-        GitHub gh = GitHubAPIAuthHelper.getGitHubAPI();
         logger.info("Starting CI workflow extraction");
-        List<String> projectNames = getProjectsFromCSV();
+        List<String> projectNames = getProjectsFromCSV("intake/final_1-0-50.txt");
 
-        extractCIWorkflowsToFiles(gh, projectNames);
-        saveAllWorkflowRunsFromExtracted(gh, projectNames);
+        int totalTokens = Dotenv.load().get("TOKEN_POOL").split(",").length;
+        int totalProjects = projectNames.size();
+        int batchSize = totalProjects / totalTokens;
+        int remainder = totalProjects % totalTokens;
+
+        List<Pair<Integer, List<String>>> searchPairs = new ArrayList<>();
+        int currentIndex = 0;
+
+        for (int i = 0; i < totalTokens; ++i) {
+            int currentBatchSize = batchSize + (i < remainder ? 1 : 0);
+            List<String> repos = new ArrayList<>();
+
+            for (int k = 0; k < currentBatchSize && currentIndex < totalProjects; ++k) {
+                repos.add(projectNames.get(currentIndex));
+                currentIndex++;
+            }
+
+            searchPairs.add(Pair.of(i, repos));
+        }
+
+        long start = System.nanoTime();
+        GitHubAPIAuthHelper ghHelper = new GitHubAPIAuthHelper();
+        searchPairs.parallelStream().forEach(pair -> {
+            int index = pair.getKey();
+            List<String> repos = pair.getValue();
+
+            int startIndex = index * batchSize;
+            int endIndex = (index != totalTokens - 1) ? startIndex + batchSize : projectNames.size();
+
+            logger.info("Starting thread for token index {} with start {} and end {}",
+                    index, startIndex, endIndex);
+            saveAllWorkflowRunsFromExtracted(ghHelper.getNextGH(), repos);
+        });
+
+        long end = System.nanoTime();
+        long elapsedSeconds = (end - start) / 1_000_000_000;
+        long minutes = elapsedSeconds / 60;
+        long seconds = elapsedSeconds
+                % 60;
+        Main.logger
+                .info(String.format("Downloaded %d projects in %dmin%02dsec.", projectNames.size(), minutes, seconds));
+
+        // Original extraction
+        // extractCIWorkflowsToFiles(gh, projectNames);
+        // saveAllWorkflowRunsFromExtracted(gh, projectNames);
     }
 
     public static List<String> getProjectsFromCSV(String fileName) {
@@ -52,7 +100,7 @@ public class CIExtractorMain {
     public static void extractCIWorkflowsToFiles(GitHub gh, List<String> projectNames) {
         for (String project : projectNames) {
             CIWorkflowExtractor ciWorkflowExtractor = new CIWorkflowExtractor(gh, project);
-            if(ciWorkflowExtractor.isCached()) {
+            if (ciWorkflowExtractor.isCached()) {
                 logger.info("Data for {} found. Skipping...", project);
                 continue;
             }
@@ -77,7 +125,8 @@ public class CIExtractorMain {
      */
     private static void saveToCSV(String repoName, List<CIWorkflow> ciWorkflows) throws IOException {
         Path dir = Paths.get("sampled_workflows");
-        if (Files.notExists(dir)) Files.createDirectory(dir);
+        if (Files.notExists(dir))
+            Files.createDirectory(dir);
 
         Path outputFile = dir.resolve(repoName.replace("/", "_") + ".csv");
         if (Files.exists(outputFile)) {
@@ -97,8 +146,8 @@ public class CIExtractorMain {
 
     private static void saveExcludedToCSV(String project) {
         try (FileWriter fw = new FileWriter("excluded_by_workflow.csv", true);
-            BufferedWriter bw = new BufferedWriter(fw);
-            PrintWriter out = new PrintWriter(bw)) {
+                BufferedWriter bw = new BufferedWriter(fw);
+                PrintWriter out = new PrintWriter(bw)) {
             out.println(project);
         } catch (IOException e) {
             e.printStackTrace();
@@ -125,7 +174,8 @@ public class CIExtractorMain {
             try {
                 List<Integer> workflowIds = readIdsFromCSV(filePath);
                 CIWorkflowRunExtractor ciWorkflowRunWriter = new CIWorkflowRunExtractor(gh);
-                for (int workflow : workflowIds) ciWorkflowRunWriter.saveTestWorkflowRuns(project, workflow);
+                for (int workflow : workflowIds)
+                    ciWorkflowRunWriter.saveTestWorkflowRuns(project, workflow);
             } catch (Exception e) {
                 logger.error("Failed to save workflow runs for {}: {}", project, e.getMessage());
             }
