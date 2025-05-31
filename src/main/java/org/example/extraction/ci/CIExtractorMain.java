@@ -29,7 +29,7 @@ public class CIExtractorMain {
     // https://open.spotify.com/track/4RvWPyQ5RL0ao9LPZeSouE?si=f4e83e3f85714521
     public static void main(String[] args) {
         logger.info("Starting CI workflow extraction");
-        List<String> projectNames = getProjectsFromCSV("intake/final_1-0-50.txt");
+        List<String> projectNames = getProjectsFromCSV("intake/final_1.txt");
 
         int totalTokens = Dotenv.load().get("TOKEN_POOL").split(",").length;
         int totalProjects = projectNames.size();
@@ -60,9 +60,12 @@ public class CIExtractorMain {
             int startIndex = index * batchSize;
             int endIndex = (index != totalTokens - 1) ? startIndex + batchSize : projectNames.size();
 
+            GitHub gh = ghHelper.getNextGH();
+
             logger.info("Starting thread for token index {} with start {} and end {}",
                     index, startIndex, endIndex);
-            saveAllWorkflowRunsFromExtracted(ghHelper.getNextGH(), repos);
+            // extractCIWorkflowsToFiles(gh, repos);
+            saveAllWorkflowRunsFromExtracted(gh, repos);
         });
 
         long end = System.nanoTime();
