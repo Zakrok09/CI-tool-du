@@ -118,23 +118,18 @@ public class Daniel {
         DataSaver.saveData(group + "-dc", instant, duration, count, repos, DataComputor::computeDefectCount);
     }
 
-    public static void danielComments(String group) throws IOException {
-        String path = "intake/" + group + ".json";
-        String json = Files.readString(Paths.get(path));
-        ObjectMapper mapper = new ObjectMapper();
+    public static void danielComments(String group, int stepInDays, int threads) throws IOException {
+        List<String> items = ProjectListOps.getProjectListFromFile("intake/" + group + ".txt");
 
-        List<String> items = mapper.readValue(json, new TypeReference<>() {
-        });
+        Instant dateCutoff = Instant.parse(Dotenv.load().get("DATE_CUTOFF"));
 
-        Duration limit = Duration.ofDays(360 * 5);
-
-        try (ForkJoinPool customPool = new ForkJoinPool(1)) {
+        try (ForkJoinPool customPool = new ForkJoinPool(threads)) {
             List<CompletableFuture<Void>> futures = items.stream()
                     .map(project -> CompletableFuture.runAsync(() -> {
                         try {
                             Git repoGit = CachedGitCloner.getGit(project);
                             JGitCommitSampler sampler = new JGitCommitSampler(repoGit.getRepository());
-                            sampler.sampleCommitsWithDuration(Duration.ofDays(7), limit);
+                            sampler.sampleCommitsWithDuration(Duration.ofDays(stepInDays), dateCutoff);
                             List<RevCommit> sampledCommits = sampler.getSampledCommits();
 
                             RepoRetrospect repoRetrospect = new RepoRetrospect(repoGit);

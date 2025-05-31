@@ -60,6 +60,27 @@ public class JGitCommitSampler {
     }
 
     /**
+     * Sample jgit commits from
+     *
+     * @param cutoff Date cutoff to sample commits. Commits after this date are not considered.
+     */
+    public void sampleCommitsWithDuration(Duration step, Instant cutoff) {
+        List<RevCommit> sampled = new ArrayList<>();
+        try (RevWalk walk = start) {
+            Instant lastRecorded = null;
+            for (RevCommit commit : walk) {
+                Instant commitTime = Instant.ofEpochSecond(commit.getCommitTime());
+                if (commitTime.isBefore(cutoff)) break;
+                if (lastRecorded == null || Duration.between(commitTime, lastRecorded).abs().compareTo(step) >= 0) {
+                    sampled.add(commit);
+                    lastRecorded = commitTime;
+                }
+            }
+        }
+        this.sampledCommits = sampled;
+    }
+
+    /**
      * Sample all commits starting from the set start.
      *
      * @return a list of all jgit commits

@@ -14,7 +14,6 @@ public class Main {
     public static void main(String[] args) throws IOException {
         logger.info("Starting script");
         FetchSettings.Daniel();
-        // Daniel.danielLoad("final_1-0-50");
-        Daniel.danielKPI("final_1-0-50");
+        Daniel.danielComments("final_1", 30, 6);
     }
 }
