@@ -192,13 +192,13 @@ public class Daniel {
 
                             List<Pair<RevCommit,DocumentationStats>> pairs = new ArrayList<>();
 
+                            logger.info("Extracting documentation stats for {}", project);
                             GitHub gh = ghHelper.getNextGH();
                             for (RevCommit revCommit : sampledCommits) {
                                 GHCommit ghCommit = gh.getRepository(project).getCommit(revCommit.getName());
                                 pairs.add(Pair.of(revCommit, DataExtractor.extractDocSizeStats(ghCommit)));
                             }
 
-                            logger.info("Extracting documentation stats for {}", project);
                             saveStatsData(project, pairs);
                         } catch (Exception e) {
                             throw new RuntimeException(e);
@@ -226,12 +226,19 @@ public class Daniel {
         String fileName = repoName.replace('/', '_') + "_doc_stats" + ".csv";
         File output = new File("sampled_commits_doc_stats", fileName);
 
+        if (!output.getParentFile().exists() && !output.getParentFile().mkdirs()) {
+            logger.error("Failed to create kpis directory for saving data.");
+            throw new RuntimeException("Error `.mkdirs()`. Directory not created.");
+        }
+
         try (FileWriter csvWriter = new FileWriter(output)) {
             csvWriter.append("commitSHA,commitDate");
             for (int i = 0; i < n; ++i) {
                 String docName = DocumentationStats.DOC_FILE_LIST[i];
                 csvWriter.append(",").append(docName).append(",exists,size");
             }
+            csvWriter.append(",issue templates,exists,size");
+            csvWriter.append(",pull request templates,exists,size");
             csvWriter.append("\n");
 
             for (Pair<RevCommit,DocumentationStats> pair : pairs) {
@@ -240,9 +247,8 @@ public class Daniel {
 
                 csvWriter.append(revCommit.getName());
                 csvWriter.append(",").append(Integer.toString(revCommit.getCommitTime()));
-                for (int i = 0; i < n; ++i) {
-                    String docName = DocumentationStats.DOC_FILE_LIST[i];
-                    csvWriter.append(",").append(docName);
+                for (int i = 0; i < n + 2; ++i) {
+                    csvWriter.append(",").append(stats.documentationFiles[i].name);
                     csvWriter.append(",").append(Boolean.toString(stats.documentationFiles[i].exists));
                     csvWriter.append(",").append(Integer.toString(stats.documentationFiles[i].size));
                 }
