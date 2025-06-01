@@ -232,6 +232,8 @@ public class Daniel {
                 String docName = DocumentationStats.DOC_FILE_LIST[i];
                 csvWriter.append(",").append(docName).append(",exists,size");
             }
+            csvWriter.append(",issue templates,exists,size");
+            csvWriter.append(",pull request templates,exists,size");
             csvWriter.append("\n");
 
             for (Pair<RevCommit,DocumentationStats> pair : pairs) {
@@ -240,9 +242,8 @@ public class Daniel {
 
                 csvWriter.append(revCommit.getName());
                 csvWriter.append(",").append(Integer.toString(revCommit.getCommitTime()));
-                for (int i = 0; i < n; ++i) {
-                    String docName = DocumentationStats.DOC_FILE_LIST[i];
-                    csvWriter.append(",").append(docName);
+                for (int i = 0; i < n + 2; ++i) {
+                    csvWriter.append(",").append(stats.documentationFiles[i].name);
                     csvWriter.append(",").append(Boolean.toString(stats.documentationFiles[i].exists));
                     csvWriter.append(",").append(Integer.toString(stats.documentationFiles[i].size));
                 }
