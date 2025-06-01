@@ -192,13 +192,13 @@ public class Daniel {
 
                             List<Pair<RevCommit,DocumentationStats>> pairs = new ArrayList<>();
 
+                            logger.info("Extracting documentation stats for {}", project);
                             GitHub gh = ghHelper.getNextGH();
                             for (RevCommit revCommit : sampledCommits) {
                                 GHCommit ghCommit = gh.getRepository(project).getCommit(revCommit.getName());
                                 pairs.add(Pair.of(revCommit, DataExtractor.extractDocSizeStats(ghCommit)));
                             }
 
-                            logger.info("Extracting documentation stats for {}", project);
                             saveStatsData(project, pairs);
                         } catch (Exception e) {
                             throw new RuntimeException(e);
@@ -225,6 +225,11 @@ public class Daniel {
 
         String fileName = repoName.replace('/', '_') + "_doc_stats" + ".csv";
         File output = new File("sampled_commits_doc_stats", fileName);
+
+        if (!output.getParentFile().exists() && !output.getParentFile().mkdirs()) {
+            logger.error("Failed to create kpis directory for saving data.");
+            throw new RuntimeException("Error `.mkdirs()`. Directory not created.");
+        }
 
         try (FileWriter csvWriter = new FileWriter(output)) {
             csvWriter.append("commitSHA,commitDate");
