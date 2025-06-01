@@ -196,12 +196,42 @@ public class DataExtractor {
         }
     }
 
-    public static DocumentationStats extractDocumentationStats(GHCommit commit) throws IOException {
+    public static DocumentationStats extractDocUpdateStats(GHCommit commit) throws IOException {
+        DocumentationStats stats = new DocumentationStats();
+        int n = DocumentationStats.DOC_FILE_LIST.length;
+
+        Map<String, File> searchFiles = new HashMap<>();
+        fillSearchFiles(searchFiles, commit);
+
+        searchFiles.values().forEach(file -> {
+            String[] split = file.getFileName().split("/");
+            String folder = split.length > 1 ? split[split.length - 2] : "";
+            String fileName = split[split.length - 1];
+            
+            if (DocumentationStats.DOC_FILE_MAP.containsKey(fileName)) {
+                int ind = DocumentationStats.DOC_FILE_MAP.get(fileName);
+                stats.documentationFiles[ind].additions = (int) file.getLinesAdded();
+                stats.documentationFiles[ind].deletions = (int) file.getLinesDeleted();
+            }
+
+            if (folder.equals("ISSUE_TEMPLATE") && (fileName.endsWith(".md") || fileName.endsWith(".yml"))) {
+                stats.documentationFiles[n].additions += (int) file.getLinesAdded();
+                stats.documentationFiles[n].deletions += (int) file.getLinesDeleted();
+            } else if (fileName.equalsIgnoreCase("pull_request_template.md") || (folder.equals("PULL_REQUEST_TEMPLATE") && fileName.endsWith(".md"))) {
+                stats.documentationFiles[n + 1].additions += (int) file.getLinesAdded();
+                stats.documentationFiles[n + 1].deletions += (int) file.getLinesDeleted();
+            }
+        });
+
+        return stats;
+    }
+
+    public static DocumentationStats extractDocSizeStats(GHCommit commit) throws IOException {
         DocumentationStats stats = new DocumentationStats();
         int n = DocumentationStats.DOC_FILE_LIST.length;
 
         Map<String, Pair<String, GHTreeEntry>> searchEntries = new HashMap<>();
-        // fillSearchEntries(searchEntries, commit);
+        fillSearchEntries(searchEntries, commit);
 
         searchEntries.values().forEach(pair -> {
             String[] split = pair.getKey().split("/");
@@ -237,29 +267,6 @@ public class DataExtractor {
                     logger.info("[DataExtractor] Error reading pull request template entry: " + e.getMessage());
                     throw new RuntimeException(e);
                 }
-            }
-        });
-
-        Map<String, File> searchFiles = new HashMap<>();
-        fillSearchFiles(searchFiles, commit);
-
-        searchFiles.values().forEach(file -> {
-            String[] split = file.getFileName().split("/");
-            String folder = split.length > 1 ? split[split.length - 2] : "";
-            String fileName = split[split.length - 1];
-            
-            if (DocumentationStats.DOC_FILE_MAP.containsKey(fileName)) {
-                int ind = DocumentationStats.DOC_FILE_MAP.get(fileName);
-                stats.documentationFiles[ind].additions = (int) file.getLinesAdded();
-                stats.documentationFiles[ind].deletions = (int) file.getLinesDeleted();
-            }
-
-            if (folder.equals("ISSUE_TEMPLATE") && (fileName.endsWith(".md") || fileName.endsWith(".yml"))) {
-                stats.documentationFiles[n].additions += (int) file.getLinesAdded();
-                stats.documentationFiles[n].deletions += (int) file.getLinesDeleted();
-            } else if (fileName.equalsIgnoreCase("pull_request_template.md") || (folder.equals("PULL_REQUEST_TEMPLATE") && fileName.endsWith(".md"))) {
-                stats.documentationFiles[n + 1].additions += (int) file.getLinesAdded();
-                stats.documentationFiles[n + 1].deletions += (int) file.getLinesDeleted();
             }
         });
 

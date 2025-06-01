@@ -59,6 +59,8 @@ kpis/
 sampled_workflow_runs
 sampled_workflows
 sampled_commits
+sampled_commits_doc_stats
+sampled_commits_code_comments
 repos
 clones
 cache

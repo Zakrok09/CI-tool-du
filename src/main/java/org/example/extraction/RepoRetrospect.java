@@ -123,6 +123,7 @@ public class RepoRetrospect {
 
                 results.add(new CommitPair<>(commit, codeCommentPercentage));
             } catch (IOException | InterruptedException | GitAPIException e) {
+                restore();
                 e.printStackTrace();
                 throw new RuntimeException(e.getMessage());
             }

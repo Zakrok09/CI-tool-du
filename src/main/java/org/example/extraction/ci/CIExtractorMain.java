@@ -29,7 +29,7 @@ public class CIExtractorMain {
     // https://open.spotify.com/track/4RvWPyQ5RL0ao9LPZeSouE?si=f4e83e3f85714521
     public static void main(String[] args) {
         logger.info("Starting CI workflow extraction");
-        List<String> projectNames = getProjectsFromCSV("intake/final_1.txt");
+        List<String> projectNames = getProjectsFromCSV("intake/final_for_repo_data_1.txt");
 
         int totalTokens = Dotenv.load().get("TOKEN_POOL").split(",").length;
         int totalProjects = projectNames.size();
@@ -84,7 +84,7 @@ public class CIExtractorMain {
     public static List<String> getProjectsFromCSV(String fileName) {
         File csvFile = new File(fileName);
         if (!csvFile.exists()) {
-            logger.error("projects.csv file does not exist.");
+            logger.error("{} file does not exist.", fileName);
             return List.of();
         }
 

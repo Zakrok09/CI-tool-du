@@ -10,12 +10,15 @@ import io.github.cdimascio.dotenv.Dotenv;
 import org.example.Main;
 import org.example.computation.DataComputor;
 import org.example.computation.DataSaver;
+import org.example.data.DocumentationStats;
 import org.example.data.Repository;
+import org.example.extraction.DataExtractor;
 import org.example.extraction.JGitCommitSampler;
 import org.example.extraction.RepoRetrospect;
 import org.example.fetching.CachedDataRepoFetcher;
 import org.example.fetching.CachedGitCloner;
 import org.example.utils.GitHubAPIAuthHelper;
+import org.kohsuke.github.GHCommit;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 
@@ -48,7 +51,7 @@ public class Daniel {
         List<String> input = ProjectListOps.getProjectListFromFile("intake/" + group + ".txt");
 
         int totalTokens = Dotenv.load().get("TOKEN_POOL").split(",").length;
-        int threadsPerToken = 2;
+        int threadsPerToken = 1;
         int batchSize = input.size() / totalTokens / threadsPerToken;
         
         List<Pair<Integer, List<String>>> searchPairs = new ArrayList<>();
@@ -150,7 +153,7 @@ public class Daniel {
         logger.info("Saving comment data for {}", repoName);
 
         String fileName = repoName.replace('/', '_') + "_comments" + ".csv";
-        File output = new File("repos", fileName);
+        File output = new File("sampled_commits_code_comments", fileName);
 
         try (FileWriter csvWriter = new FileWriter(output)) {
             csvWriter.append("commitSHA,commitDate,commentPercentage");
@@ -160,6 +163,89 @@ public class Daniel {
                 csvWriter.append(pair.commit.getName());
                 csvWriter.append(",").append(Integer.toString(pair.commit.getCommitTime()));
                 csvWriter.append(",").append(Double.toString(pair.data));
+                csvWriter.append("\n");
+            }
+
+            logger.info("Data for {} saved to {}", repoName, output.getAbsolutePath());
+        } catch (IOException e) {
+            logger.fatal("Error writing {} data: {}", repoName, e.getLocalizedMessage());
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void danielDocumentationStats(String group, int stepInDays, int threads) throws IOException {
+        List<String> items = ProjectListOps.getProjectListFromFile("intake/" + group + ".txt");
+
+        Instant dateCutoff = Instant.parse(Dotenv.load().get("DATE_CUTOFF"));
+
+        GitHubAPIAuthHelper ghHelper = new GitHubAPIAuthHelper();
+
+        long start = System.nanoTime();
+        try (ForkJoinPool customPool = new ForkJoinPool(threads)) {
+            List<CompletableFuture<Void>> futures = items.stream()
+                    .map(project -> CompletableFuture.runAsync(() -> {
+                        try {
+                            Git repoGit = CachedGitCloner.getGit(project);
+                            JGitCommitSampler sampler = new JGitCommitSampler(repoGit.getRepository());
+                            sampler.sampleCommitsWithDuration(Duration.ofDays(stepInDays), dateCutoff);
+                            List<RevCommit> sampledCommits = sampler.getSampledCommits();
+
+                            List<Pair<RevCommit,DocumentationStats>> pairs = new ArrayList<>();
+
+                            GitHub gh = ghHelper.getNextGH();
+                            for (RevCommit revCommit : sampledCommits) {
+                                GHCommit ghCommit = gh.getRepository(project).getCommit(revCommit.getName());
+                                pairs.add(Pair.of(revCommit, DataExtractor.extractDocSizeStats(ghCommit)));
+                            }
+
+                            logger.info("Extracting documentation stats for {}", project);
+                            saveStatsData(project, pairs);
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }, customPool))
+                    .toList();
+
+            // Wait for all tasks to complete
+            futures.forEach(CompletableFuture::join);
+        }
+
+        long end = System.nanoTime();
+        long elapsedSeconds = (end - start) / 1_000_000_000;
+        long minutes = elapsedSeconds / 60;
+        long seconds = elapsedSeconds
+                % 60;
+        Main.logger
+                .info(String.format("Extracted documentation stats for %d projects in %dmin%02dsec.", items.size(), minutes, seconds));
+    }
+
+    private static void saveStatsData(String repoName, List<Pair<RevCommit,DocumentationStats>> pairs) {
+        logger.info("Saving stats data for {}", repoName);
+        int n = DocumentationStats.DOC_FILE_LIST.length;
+
+        String fileName = repoName.replace('/', '_') + "_doc_stats" + ".csv";
+        File output = new File("sampled_commits_doc_stats", fileName);
+
+        try (FileWriter csvWriter = new FileWriter(output)) {
+            csvWriter.append("commitSHA,commitDate");
+            for (int i = 0; i < n; ++i) {
+                String docName = DocumentationStats.DOC_FILE_LIST[i];
+                csvWriter.append(",").append(docName).append(",exists,size");
+            }
+            csvWriter.append("\n");
+
+            for (Pair<RevCommit,DocumentationStats> pair : pairs) {
+                RevCommit revCommit = pair.getKey();
+                DocumentationStats stats = pair.getValue();
+
+                csvWriter.append(revCommit.getName());
+                csvWriter.append(",").append(Integer.toString(revCommit.getCommitTime()));
+                for (int i = 0; i < n; ++i) {
+                    String docName = DocumentationStats.DOC_FILE_LIST[i];
+                    csvWriter.append(",").append(docName);
+                    csvWriter.append(",").append(Boolean.toString(stats.documentationFiles[i].exists));
+                    csvWriter.append(",").append(Integer.toString(stats.documentationFiles[i].size));
+                }
                 csvWriter.append("\n");
             }
 

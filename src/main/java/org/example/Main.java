@@ -14,6 +14,6 @@ public class Main {
     public static void main(String[] args) throws IOException {
         logger.info("Starting script");
         FetchSettings.Daniel();
-        Daniel.danielComments("final_1", 30, 6);
+        Daniel.danielLoad("final_for_repo_data_1_missing");
     }
 }

@@ -24,7 +24,7 @@ public class Commit implements Serializable {
             author = FetchSettings.users ? new User(commit.getAuthor()) : null;
             commitDate = commit.getCommitDate();
             linesChanged = commit.getLinesChanged();
-            documentationStats = FetchSettings.documentationStats ? DataExtractor.extractDocumentationStats(commit) : null;
+            documentationStats = FetchSettings.documentationStats ? DataExtractor.extractDocUpdateStats(commit) : null;
         } catch (Exception e) {
             sha1 = null;
             author = null;
