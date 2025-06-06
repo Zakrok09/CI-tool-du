@@ -1,6 +1,5 @@
 package org.example.data;
 
-import org.example.extraction.ci.KnownEvent;
 import org.kohsuke.github.GHWorkflowRun;
 
 import java.io.IOException;
