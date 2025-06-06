@@ -1,12 +1,17 @@
 package org.example.computation;
 
+import io.github.cdimascio.dotenv.Dotenv;
 import org.example.data.WorkflowRun;
+import org.example.extraction.ci.KnownEvent;
+import org.example.utils.Helper;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -44,12 +49,10 @@ public class TestFrequencyComputer {
     public Map<String, List<Integer>> calculateFrequency() {
         Map<String, List<WorkflowRun>> workflowToRuns = parseFiles();
 
-        // Find the earliest start time across all runs
-        long intervalStartMillis = workflowToRuns.values().stream()
-                .flatMap(List::stream)
-                .mapToLong(run -> run.start_time.toEpochMilli())
-                .min()
-                .orElse(System.currentTimeMillis());
+        Dotenv dotenv = Dotenv.load();
+        String cutoffStr = dotenv.get("DATE_CUTOFF");
+        if (cutoffStr == null) throw new RuntimeException("DATE_CUTOFF env variable not set!");
+        Instant start = Instant.parse(cutoffStr);
 
         int numberOfSteps = (int) (durationInterval.toMillis() / stepInterval.toMillis());
         Map<String, List<Integer>> frequencies = new HashMap<>();
@@ -60,11 +63,30 @@ public class TestFrequencyComputer {
 
         for (String repoName : workflowToRuns.keySet()) {
             List<WorkflowRun> runs = workflowToRuns.get(repoName);
+            int countedRuns = 0;
+            int skippedRuns = 0;
+
             for (WorkflowRun run : runs) {
-                long stepIndex = (run.start_time.toEpochMilli() - intervalStartMillis) / stepInterval.toMillis();
+                // The filtering based on cutoff date is already done in parseFiles()
+                // Calculate which time interval this run belongs to
+                long millisSinceCutoff = run.start_time.toEpochMilli() - start.toEpochMilli();
+                int stepIndex = (int) (millisSinceCutoff / stepInterval.toMillis());
+
+                // Only count runs that fall within our analysis window
                 if (stepIndex >= 0 && stepIndex < numberOfSteps) {
-                    frequencies.get(repoName).set((int) stepIndex, frequencies.get(repoName).get((int) stepIndex) + 1);
+                    frequencies.get(repoName).set(stepIndex, frequencies.get(repoName).get(stepIndex) + 1);
+                    countedRuns++;
+                } else {
+                    skippedRuns++;
                 }
+            }
+
+            int totalRuns = workflowToRuns.get(repoName).size();
+            int sumFrequencies = frequencies.get(repoName).stream().mapToInt(Integer::intValue).sum();
+
+            if (countedRuns + skippedRuns != totalRuns || countedRuns != sumFrequencies) {
+                System.out.println(String.format("Inconsistency for {}: total={}, counted={}, skipped={}, sum={}",
+                        repoName, totalRuns, countedRuns, skippedRuns, sumFrequencies));
             }
         }
 
@@ -80,50 +102,48 @@ public class TestFrequencyComputer {
         Path dir = Path.of("sampled_workflow_runs");
         if (!dir.toFile().exists()) throw new RuntimeException("sampled_workflow_runs folder does not exist!");
 
+        Dotenv dotenv = Dotenv.load();
+        String cutoffStr = dotenv.get("DATE_CUTOFF");
+        if (cutoffStr == null) throw new RuntimeException("DATE_CUTOFF env variable not set!");
+        Instant start = Instant.parse(cutoffStr);
+
+        List<String> projects = Helper.getFileLinesSafe("final_for_repo_data.csv");
+
         Map<String, List<WorkflowRun>> workflowRuns = new HashMap<>();
 
-        for (File file : Objects.requireNonNull(dir.toFile().listFiles())) {
-            if (file.getName().endsWith(".csv")) {
-                logger.debug("Parsing file: {}", file.getName());
-                String repoName = getRepoName(file.getName());
+        for (String project : projects) {
+            Path sampled_workflows = Path.of("sampled_workflows", project.replace("/", "_") + ".csv");
 
-                try (var lines = Files.lines(file.toPath())) {
-                    List<WorkflowRun> runs = parseLines(lines);
-                    addToMapOrAppend(workflowRuns, repoName, runs);
-                    workflowRuns.put(repoName, runs);
+            if (!sampled_workflows.toFile().exists()) {
+                throw new RuntimeException("sampled_workflows folder does not exist for project: " + project);
+            }
 
-                    logger.debug("Parsed {} runs for repository: {}", runs.size(), repoName);
-                } catch (IOException e) {
-                    logger.error("Error reading file: {}, skipping...", file.getName(), e);
+            List<String> workflows = Helper.getFileLinesSafe(sampled_workflows).stream().skip(1).toList();
+            for (String workflow : workflows) {
+                String[] parts = workflow.split(";");
+
+                if (parts.length < 4) {
+                    logger.warn("Skipping malformed workflow line: {}", workflow);
+                    continue;
+                }
+
+                String workflowRunsFile = project.replace("/", "_") + "-" + parts[1] + ".csv";
+                Path workflowRunsPath = Path.of("sampled_workflow_runs", workflowRunsFile);
+
+                for (String line : Helper.getFileLinesSafe(workflowRunsPath).stream().skip(1).toList()) {
+                    if (line.trim().isEmpty()) continue;
+
+                    WorkflowRun run = WorkflowRun.fromCSV(line);
+                    if (run.start_time.isBefore(start)) continue;
+                    workflowRuns.putIfAbsent(project, new ArrayList<>());
+                    workflowRuns.get(project).add(run);
                 }
             }
+
+            System.out.println("Total workflow runs for project " + project + ": " + workflowRuns.getOrDefault(project, Collections.emptyList()).size());
         }
 
         return workflowRuns;
-    }
-
-    private List<WorkflowRun> parseLines(Stream<String> lines) throws IOException {
-        return lines.skip(1)
-                .map(WorkflowRun::fromCSV)
-                .collect(Collectors.toCollection(ArrayList::new));
-    }
-
-    private void addToMapOrAppend(Map<String, List<WorkflowRun>> map, String key, List<WorkflowRun> runs) {
-        if (map.containsKey(key)) {
-            map.get(key).addAll(runs);
-        } else {
-            map.put(key, runs);
-        }
-    }
-
-    private String getRepoName(String fileName) {
-        String[] repoArray = fileName.replace(".csv", "").split("-");
-
-        StringBuilder repoNameBuilder = new StringBuilder();
-        for (int i = 0; i < repoArray.length - 1; i++) {
-            repoNameBuilder.append(repoArray[i]);
-        }
-        return repoNameBuilder.toString();
     }
 
 }

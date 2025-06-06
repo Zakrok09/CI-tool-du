@@ -31,7 +31,7 @@ public class TestTriggerComputer {
                 try (var lines = Files.lines(file.toPath())) {
                     lines.skip(1)
                             .map(this::extractTriggersFromLine)
-                            .flatMap(triggers -> triggers.stream())
+                            .flatMap(Collection::stream)
                             .forEach(trigger -> {
                                 KnownEvent event = KnownEvent.valueOf(trigger.toUpperCase());
                                 frequencies[event.ordinal()]++;
@@ -60,7 +60,7 @@ public class TestTriggerComputer {
                 logger.debug("Parsing file: {}", file.getName());
 
                 try (var lines = Files.lines(file.toPath())) {
-                    count += lines.skip(1).filter(trigger -> !trigger.trim().isEmpty()).count();
+                    count += (int) lines.skip(1).filter(trigger -> !trigger.trim().isEmpty()).count();
                 } catch (IOException e) {
                     logger.error("Error reading file: {}, skipping...", file.getName(), e);
                 }
@@ -71,6 +71,11 @@ public class TestTriggerComputer {
 
     private List<String> extractTriggersFromLine(String line) {
         String[] parts = line.split(";");
+        if (parts.length < 4) {
+            logger.warn("Line does not contain enough parts to extract triggers: {}", line);
+            return Collections.emptyList();
+        }
+
         return List.of(parts[3].split(","));
     }
 

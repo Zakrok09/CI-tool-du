@@ -12,7 +12,8 @@ public class WorkflowRun extends GitHubObject implements Serializable {
     public long id;
     public long triggererId;
     public String commit_id;
-    public GHWorkflowRun.Status status;
+    public GHWorkflowRun.Conclusion status;
+    public String event;
 
     public WorkflowRun(GHWorkflowRun run) throws IOException {
         super(run);
@@ -22,8 +23,9 @@ public class WorkflowRun extends GitHubObject implements Serializable {
             id = run.getId();
             start_time = run.getRunStartedAt();
             triggererId = run.getTriggeringActor().getId();
-            status = run.getStatus();
+            status = run.getConclusion();
             commit_id = run.getHeadCommit().getId();
+            event = run.getEvent().name();
         } catch (Exception e) {
             name = null;
             start_time = null;
@@ -31,6 +33,7 @@ public class WorkflowRun extends GitHubObject implements Serializable {
             id = -1;
             status = null;
             commit_id = null;
+            event = null;
         }
     }
 
@@ -40,18 +43,19 @@ public class WorkflowRun extends GitHubObject implements Serializable {
         String[] parts = csvLine.split(";");
         WorkflowRun run = new WorkflowRun();
         run.id = Long.parseLong(parts[0]);
-        run.createdAt = Instant.ofEpochSecond((long) Double.parseDouble(parts[1]));
-        run.updatedAt = Instant.ofEpochSecond((long) Double.parseDouble(parts[2]));
-        run.start_time = Instant.ofEpochSecond((long) Double.parseDouble(parts[4]));
+        run.createdAt = Instant.parse(parts[1]);
+        run.updatedAt = Instant.parse(parts[2]);
+        run.start_time = Instant.parse(parts[4]);
         run.name = parts[3];
         run.triggererId = Long.parseLong(parts[5]);
         run.commit_id = parts[6];
-        run.status = GHWorkflowRun.Status.valueOf(parts[7]);
+        run.status = GHWorkflowRun.Conclusion.valueOf(parts[7].toUpperCase());
+        run.event = parts[8];
         return run;
     }
 
     public String toCSV() {
-        return String.format("%d;%s;%s;%s;%s;%d;%s;%s\n",
+        return String.format("%d;%s;%s;%s;%s;%d;%s;%s;%s\n",
                 id,
                 createdAt.toString(),
                 updatedAt.toString(),
@@ -59,6 +63,7 @@ public class WorkflowRun extends GitHubObject implements Serializable {
                 start_time.toString(),
                 triggererId,
                 commit_id,
-                status.toString());
+                status.toString(),
+                event);
     }
 }
