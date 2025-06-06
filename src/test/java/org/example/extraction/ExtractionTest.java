@@ -56,6 +56,7 @@ public class ExtractionTest {
         System.out.println("total tests: " + ttc.countWorkflows());
 
         for (int i = 0; i < freqs.length; i++) {
+            if( freqs[i] == 0) continue;
             System.out.println("Frequency of " + KnownEvent.values()[i] + ": " + freqs[i]);
         }
     }

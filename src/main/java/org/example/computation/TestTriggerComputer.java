@@ -71,6 +71,11 @@ public class TestTriggerComputer {
 
     private List<String> extractTriggersFromLine(String line) {
         String[] parts = line.split(";");
+        if (parts.length < 4) {
+            logger.warn("Line does not contain enough parts to extract triggers: {}", line);
+            return Collections.emptyList();
+        }
+
         return List.of(parts[3].split(","));
     }
 

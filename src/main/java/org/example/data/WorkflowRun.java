@@ -40,13 +40,13 @@ public class WorkflowRun extends GitHubObject implements Serializable {
         String[] parts = csvLine.split(";");
         WorkflowRun run = new WorkflowRun();
         run.id = Long.parseLong(parts[0]);
-        run.createdAt = Instant.ofEpochSecond((long) Double.parseDouble(parts[1]));
-        run.updatedAt = Instant.ofEpochSecond((long) Double.parseDouble(parts[2]));
-        run.start_time = Instant.ofEpochSecond((long) Double.parseDouble(parts[4]));
+        run.createdAt = Instant.parse(parts[1]);
+        run.updatedAt = Instant.parse(parts[2]);
+        run.start_time = Instant.parse(parts[4]);
         run.name = parts[3];
         run.triggererId = Long.parseLong(parts[5]);
         run.commit_id = parts[6];
-        run.status = GHWorkflowRun.Status.valueOf(parts[7]);
+        run.status = GHWorkflowRun.Status.valueOf(parts[7].toUpperCase());
         return run;
     }
 

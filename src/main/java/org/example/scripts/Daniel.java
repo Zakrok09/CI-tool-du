@@ -130,6 +130,12 @@ public class Daniel {
             List<CompletableFuture<Void>> futures = items.stream()
                     .map(project -> CompletableFuture.runAsync(() -> {
                         try {
+                            String fileName = project.replace('/', '_') + "_comments" + ".csv";
+                            File output = new File("repos", fileName);
+                            if (output.exists()) {
+                                logger.info("Skipping {} as it already exists.", project);
+                                return;
+                            }
                             Git repoGit = CachedGitCloner.getGit(project);
                             JGitCommitSampler sampler = new JGitCommitSampler(repoGit.getRepository());
                             sampler.sampleCommitsWithDuration(Duration.ofDays(stepInDays), dateCutoff);

@@ -11,6 +11,8 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.example.Main.logger;
+
 /**
  * A (soon to be) data agnostic class that collects data per commit
  * by specifying the algorithm that shall be executed on collection.
@@ -122,7 +124,9 @@ public class RepoRetrospect {
                 process.waitFor();
 
                 results.add(new CommitPair<>(commit, codeCommentPercentage));
-            } catch (IOException | InterruptedException | GitAPIException e) {
+            } catch (GitAPIException e) {
+                logger.error("Git API exception while processing commit {}: {}", commit.getName(), e.getMessage());
+            } catch (IOException | InterruptedException e) {
                 restore();
                 e.printStackTrace();
                 throw new RuntimeException(e.getMessage());
