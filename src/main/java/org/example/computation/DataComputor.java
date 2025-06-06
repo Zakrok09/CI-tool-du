@@ -214,6 +214,7 @@ public class DataComputor {
         }
 
         for(Release r : repo.releases) {
+            if (r.publishedAt == null) continue;
             int index = (int) Duration.between(windowStart, r.publishedAt).dividedBy(intervalSize);
             // Only consider releases published after the start of the window and until end
             if (index >= 0 && index < intervalCount) {
@@ -270,6 +271,8 @@ public class DataComputor {
         int currReleaseIdx = 0;
 
         for(Commit c : commitsSorted) {
+            if (c.commitDate == null) continue;
+
             // Get first release after the current commit
             while(currReleaseIdx < releasesSorted.size()
                     && c.commitDate.isAfter(releasesSorted.get(currReleaseIdx).publishedAt)) {

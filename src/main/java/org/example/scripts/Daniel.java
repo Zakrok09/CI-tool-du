@@ -115,8 +115,8 @@ public class Daniel {
         int count = 12;
 
         DataSaver.saveData(group + "-df", instant, duration, count, repos, DataComputor::computeDeliveryFrequency);
-        DataSaver.saveData(group + "-clt", instant, duration, count, repos, DataComputor::computeCLT);
-        DataSaver.saveData(group + "-ds", instant, duration, count, repos, DataComputor::computeDeliverySize);
+        // DataSaver.saveData(group + "-clt", instant, duration, count, repos, DataComputor::computeCLT);
+        // DataSaver.saveData(group + "-ds", instant, duration, count, repos, DataComputor::computeDeliverySize);
         DataSaver.saveData(group + "-mttr", instant, duration, count, repos, DataComputor::computeMTTR);
         DataSaver.saveData(group + "-dc", instant, duration, count, repos, DataComputor::computeDefectCount);
     }
