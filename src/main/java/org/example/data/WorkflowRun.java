@@ -13,7 +13,7 @@ public class WorkflowRun extends GitHubObject implements Serializable {
     public long id;
     public long triggererId;
     public String commit_id;
-    public GHWorkflowRun.Status status;
+    public GHWorkflowRun.Conclusion status;
     public String event;
 
     public WorkflowRun(GHWorkflowRun run) throws IOException {
@@ -24,7 +24,7 @@ public class WorkflowRun extends GitHubObject implements Serializable {
             id = run.getId();
             start_time = run.getRunStartedAt();
             triggererId = run.getTriggeringActor().getId();
-            status = run.getStatus();
+            status = run.getConclusion();
             commit_id = run.getHeadCommit().getId();
             event = run.getEvent().name();
         } catch (Exception e) {
@@ -50,7 +50,7 @@ public class WorkflowRun extends GitHubObject implements Serializable {
         run.name = parts[3];
         run.triggererId = Long.parseLong(parts[5]);
         run.commit_id = parts[6];
-        run.status = GHWorkflowRun.Status.valueOf(parts[7].toUpperCase());
+        run.status = GHWorkflowRun.Conclusion.valueOf(parts[7].toUpperCase());
         run.event = parts[8];
         return run;
     }
