@@ -7,6 +7,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
 
 public class Helper {
     public static int countLines(String input) throws IOException {
@@ -44,4 +47,18 @@ public class Helper {
 
         return lines;
     }
+
+    public static List<String> getFileLinesSafe(String filePath) {
+        return getFileLinesSafe(Paths.get(filePath));
+    }
+
+    public static List<String> getFileLinesSafe(Path filePath) {
+        try {
+            return java.nio.file.Files.readAllLines(filePath);
+        } catch (IOException e) {
+            logger.error("[Helper] Error reading file: " + filePath, e);
+            throw new RuntimeException("Error reading file: " + filePath, e);
+        }
+    }
+
 }

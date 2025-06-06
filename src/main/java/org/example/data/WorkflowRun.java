@@ -1,5 +1,6 @@
 package org.example.data;
 
+import org.example.extraction.ci.KnownEvent;
 import org.kohsuke.github.GHWorkflowRun;
 
 import java.io.IOException;
@@ -13,6 +14,7 @@ public class WorkflowRun extends GitHubObject implements Serializable {
     public long triggererId;
     public String commit_id;
     public GHWorkflowRun.Status status;
+    public String event;
 
     public WorkflowRun(GHWorkflowRun run) throws IOException {
         super(run);
@@ -24,6 +26,7 @@ public class WorkflowRun extends GitHubObject implements Serializable {
             triggererId = run.getTriggeringActor().getId();
             status = run.getStatus();
             commit_id = run.getHeadCommit().getId();
+            event = run.getEvent().name();
         } catch (Exception e) {
             name = null;
             start_time = null;
@@ -31,6 +34,7 @@ public class WorkflowRun extends GitHubObject implements Serializable {
             id = -1;
             status = null;
             commit_id = null;
+            event = null;
         }
     }
 
@@ -47,11 +51,12 @@ public class WorkflowRun extends GitHubObject implements Serializable {
         run.triggererId = Long.parseLong(parts[5]);
         run.commit_id = parts[6];
         run.status = GHWorkflowRun.Status.valueOf(parts[7].toUpperCase());
+        run.event = parts[8];
         return run;
     }
 
     public String toCSV() {
-        return String.format("%d;%s;%s;%s;%s;%d;%s;%s\n",
+        return String.format("%d;%s;%s;%s;%s;%d;%s;%s;%s\n",
                 id,
                 createdAt.toString(),
                 updatedAt.toString(),
@@ -59,6 +64,7 @@ public class WorkflowRun extends GitHubObject implements Serializable {
                 start_time.toString(),
                 triggererId,
                 commit_id,
-                status.toString());
+                status.toString(),
+                event);
     }
 }
