@@ -42,7 +42,7 @@ public class ProjectSampler {
         // "intake/2-projects-all-release-data.csv");
 
         // Filter based on issue usage
-        final_filtering("intake/2-projects-tertiary-1200-1921.csv", "intake/2-projects-final-1200-1921.csv");
+        final_filtering("intake/2-projects-tertiary-0-1200.csv", "intake/2-projects-final-0-1200.csv");
     }
 
     public static PagedSearchIterable<GHRepository> getReposIterable(GitHub gh) {
@@ -111,14 +111,14 @@ public class ProjectSampler {
         List<String> repos = CIExtractorMain.getProjectsFromCSV(input);
 
         GitHubAPIAuthHelper ghHelper = new GitHubAPIAuthHelper();
-        List<GHRepository> filtered = repos.parallelStream()
+        List<String> filtered = repos.parallelStream()
                 .map(repoName -> {
                     logger.info("Filtering {} on label usage", repoName);
                     try {
                         GHRepository ghRepo = ghHelper.getNextGH().getRepository(repoName);
                         if (uses(ghRepo)) {
                             logger.info("Filtered in {}", repoName);
-                            return ghRepo;
+                            return repoName;
                         } else {
                             logger.info("Excluded {}", repoName);
                             return null;
@@ -133,7 +133,7 @@ public class ProjectSampler {
 
         try {
             logger.info("Filtered in {} repositories", filtered.size());
-            writeToFile(Path.of(output), filtered);
+            writeStringNamesToFile(Path.of(output), filtered);
         } catch (IOException e) {
             e.printStackTrace();
         }
