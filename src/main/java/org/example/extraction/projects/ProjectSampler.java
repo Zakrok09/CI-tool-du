@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static org.example.Main.logger;
 
@@ -31,11 +32,14 @@ public class ProjectSampler {
 
     public static void main(String[] args) throws IOException {
         // preliminary_filtering("intake/2-projects-preliminary.csv");
-        // secondary_filtering("intake/2-projects-preliminary.csv", "intake/2-projects-secondary.csv");
+        // secondary_filtering("intake/2-projects-preliminary.csv",
+        // "intake/2-projects-secondary.csv");
 
         // Extract data for selection criteria - All projects
-        // extractCommitCounts("intake/2-projects-preliminary-skip-5000.csv", "intake/2-projects-all-skip-5000-commit-data.csv");
-        // extractReleaseCounts("intake/2-projects-preliminary.csv", "intake/2-projects-all-release-data.csv");
+        // extractCommitCounts("intake/2-projects-preliminary-skip-5000.csv",
+        // "intake/2-projects-all-skip-5000-commit-data.csv");
+        // extractReleaseCounts("intake/2-projects-preliminary.csv",
+        // "intake/2-projects-all-release-data.csv");
 
         // Filter based on issue usage
         final_filtering("intake/2-projects-tertiary-1200-1921.csv", "intake/2-projects-final-1200-1921.csv");
@@ -106,25 +110,26 @@ public class ProjectSampler {
     public static void final_filtering(String input, String output) throws IOException {
         List<String> repos = CIExtractorMain.getProjectsFromCSV(input);
 
-        List<GHRepository> filtered = new ArrayList<>();
         GitHubAPIAuthHelper ghHelper = new GitHubAPIAuthHelper();
-        repos.parallelStream().filter(repoName -> {
-            logger.info("Filtering {} on label usage", repoName);
-            GHRepository ghRepo;
-            try {
-                ghRepo = ghHelper.getNextGH().getRepository(repoName);
-                if (uses(ghRepo)) {
-                    logger.info("Filtered in {}", repoName);
-                    return true;
-                } else {
-                    logger.info("Excluded {}", repoName);
-                    return false;
-                }
-            } catch (IOException e) {
-                logger.error("Error filtering {} on label usage", repoName);
-                return false;
-            }
-        });
+        List<GHRepository> filtered = repos.parallelStream()
+                .map(repoName -> {
+                    logger.info("Filtering {} on label usage", repoName);
+                    try {
+                        GHRepository ghRepo = ghHelper.getNextGH().getRepository(repoName);
+                        if (uses(ghRepo)) {
+                            logger.info("Filtered in {}", repoName);
+                            return ghRepo;
+                        } else {
+                            logger.info("Excluded {}", repoName);
+                            return null;
+                        }
+                    } catch (IOException e) {
+                        logger.error("Error filtering {} on label usage", repoName, e);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
 
         try {
             logger.info("Filtered in {} repositories", filtered.size());
