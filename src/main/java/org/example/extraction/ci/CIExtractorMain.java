@@ -31,7 +31,7 @@ public class CIExtractorMain {
         logger.info("Starting CI workflow extraction");
         List<String> projectNames = getProjectsFromCSV("intake/final_for_repo_data_1.txt");
 
-        int totalTokens = 1;
+        int totalTokens = 5;
         int totalProjects = projectNames.size();
         int batchSize = totalProjects / totalTokens;
         int remainder = totalProjects % totalTokens;

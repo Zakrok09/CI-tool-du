@@ -17,172 +17,159 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import static org.example.Main.logger;
 
 public class ProjectSampler {
 
-    // public static void main(String[] args) throws IOException {
-    // GitHub gh = GitHubAPIAuthHelper.getGitHubAPI();
-
-    // PagedSearchIterable<GHRepository> iterable = gh.searchRepositories()
-    // .language("java").language("javascript").language("python") // only those
-    // languages
-    // .fork(GHFork.PARENT_ONLY) // no forks
-    // .visibility(GHRepository.Visibility.PUBLIC) // only public
-    // .stars(">49") // at least 50 stars
-    // .list();
-
-    // List<GHRepository> repos = new ArrayList<>();
-    // PagedIterator<GHRepository> iterator = iterable.iterator();
-    // while (iterator.hasNext()) {
-    // repos.add(iterator.next());
-    // }
-
-    // logger.info("Fetched {} repositories", repos.size());
-    // writeToFile(Path.of("projects-all.csv"), repos);
-    // }
-
-    // public static void main(String[] args) throws IOException {
-    // int firstN = 1000;
-    // int skip = 950;
-    // int total = firstN - skip;
-
-    // int totalTokens = Dotenv.load().get("TOKEN_POOL").split(",").length;
-    // int threadsPerToken = 1;
-    // int batchSize = total / totalTokens / threadsPerToken;
-
-    // GitHubAPIAuthHelper ghHelper = new GitHubAPIAuthHelper();
-    // List<Pair<Integer, PagedSearchIterable<GHRepository>>> searchPairs = new
-    // ArrayList<>();
-    // for (int i = 0; i < totalTokens; ++i) {
-    // GitHub gh = ghHelper.getNextGH();
-    // for (int j = 0; j < threadsPerToken; ++j) {
-    // int index = i * threadsPerToken + j;
-    // PagedSearchIterable<GHRepository> iterable = getReposIterable(gh);
-    // searchPairs.add(Pair.of(index, iterable));
-    // }
-    // }
-
-    // searchPairs.parallelStream().forEach(pair -> {
-    // int index = pair.getKey();
-    // PagedSearchIterable<GHRepository> iterable = pair.getValue();
-
-    // int start = skip + index * batchSize;
-    // int end = (index != totalTokens * threadsPerToken - 1) ? start + batchSize :
-    // firstN;
-
-    // logger.info("Starting thread for token index {} with start {} and end {}",
-    // index, start, end);
-
-    // List<GHRepository> repos = getFirstN(iterable, end, start);
-    // logger.info("Fetched {} repositories", repos.size());
-
-    // logger.info("Filtering on label usage");
-    // List<GHRepository> filtered = filterOnLabelUsage(repos);
-
-    // logger.info("Filtered in {} repositories", filtered.size());
-
-    // String fileName = "projects-new-" + start + "-" + end + ".csv";
-
-    // try {
-    // writeToFile(Path.of(fileName), filtered);
-    // } catch (IOException e) {
-    // e.printStackTrace();
-    // }
-    // });
-    // }
-
-    // public static void main(String[] args) throws IOException {
-    // String[] input = new String[] { "elastic/elasticsearch" ,
-    // "louislam/uptime-kuma" };
-
-    // int totalTokens = Dotenv.load().get("TOKEN_POOL").split(",").length;
-    // int threadsPerToken = 1;
-    // int batchSize = input.length / totalTokens / threadsPerToken;
-
-    // GitHubAPIAuthHelper ghHelper = new GitHubAPIAuthHelper();
-    // List<Pair<Integer, List<GHRepository>>> searchPairs = new ArrayList<>();
-    // for (int i = 0; i < totalTokens; ++i) {
-    // GitHub gh = ghHelper.getNextGH();
-    // for (int j = 0; j < threadsPerToken; ++j) {
-    // int index = i * threadsPerToken + j;
-    // List<GHRepository> repos = new ArrayList<>();
-
-    // for (int k = 0; k < batchSize; ++k) {
-    // repos.add(gh.getRepository(input[index * batchSize + k]));
-    // }
-
-    // searchPairs.add(Pair.of(index, repos));
-    // }
-    // }
-
-    // searchPairs.parallelStream().forEach(pair -> {
-    // int index = pair.getKey();
-    // List<GHRepository> repos = pair.getValue();
-
-    // int start = index * batchSize;
-    // int end = (index != totalTokens * threadsPerToken - 1) ? start + batchSize :
-    // input.length;
-
-    // logger.info("Starting thread for token index {} with start {} and end {}",
-    // index, start, end);
-
-    // logger.info("Filtering on label usage");
-    // List<GHRepository> filtered = filterOnLabelUsage(repos);
-
-    // logger.info("Filtered in {} repositories", filtered.size());
-
-    // String fileName = "projects-new-selected-" + start + "-" + end + ".csv";
-
-    // try {
-    // writeToFile(Path.of(fileName), filtered);
-    // } catch (IOException e) {
-    // e.printStackTrace();
-    // }
-    // });
-    // }
-
-    // public static void main(String[] args) throws IOException {
-    //     List<String> projects = CIExtractorMain.getProjectsFromCSV("projects-all.csv");
-
-    //     String token = Dotenv.load().get("GITHUB_OAUTH");
-    //     OkHttpClient client = new OkHttpClient();
-
-    //     String since = "2024-05-01T00:00:00Z";
-    //     String until = "2025-05-01T00:00:00Z";
-
-    //     String fileName = "projects-all-commit-data.csv";
-    //     try (BufferedWriter writer = Files.newBufferedWriter(Path.of(fileName), StandardOpenOption.CREATE)) {
-    //         writer.write("project;\n");
-
-    //         projects.stream().forEach(project -> {
-    //             logger.info("Getting commit count since {} until {} for {}", since, until, project);
-    //             int commitCount = getCommitCountInWindow(client, project, token, since, until);
-    //             logger.info("Got {} commit count for project: {}", commitCount, project);
-
-    //             try {
-    //                 writer.write(project + ";" + commitCount + "\n");
-    //             } catch (Exception e) {
-    //                 logger.error("Error processing run " + project + ", " + commitCount + ": "
-    //                         + e.getMessage());
-    //             }
-    //         });
-
-    //         writer.flush();
-    //     }
-    // }
+    public static Instant dateCutoff = Instant.parse(Dotenv.load().get("DATE_CUTOFF"));
 
     public static void main(String[] args) throws IOException {
-        List<String> projects = CIExtractorMain.getProjectsFromCSV("projects-all.csv");
+        // preliminary_filtering("intake/2-projects-preliminary.csv");
+        // secondary_filtering("intake/2-projects-preliminary.csv", "intake/2-projects-secondary.csv");
+
+        // Extract data for selection criteria - All projects
+        // extractCommitCounts("intake/2-projects-preliminary-skip-5000.csv", "intake/2-projects-all-skip-5000-commit-data.csv");
+        // extractReleaseCounts("intake/2-projects-preliminary.csv", "intake/2-projects-all-release-data.csv");
+
+        // Filter based on issue usage
+        final_filtering("intake/2-projects-tertiary-1200-1921.csv", "intake/2-projects-final-1200-1921.csv");
+    }
+
+    public static PagedSearchIterable<GHRepository> getReposIterable(GitHub gh) {
+        return gh.searchRepositories()
+                .language("python").language("javascript").language("typescript") // only these languages
+                .language("java").language("c#").language("c++").language("php")
+                .fork(GHFork.PARENT_ONLY) // no forks
+                .visibility(GHRepository.Visibility.PUBLIC) // only public
+                .stars(">49") // at least 50 stars
+                .list();
+    }
+
+    public static void preliminary_filtering(String output) throws IOException {
+        GitHub gh = GitHubAPIAuthHelper.getGitHubAPI();
+
+        List<GHRepository> repos = new ArrayList<>();
+        String[] languages = { "Python", "JavaScript", "TypeScript", "Java", "C#", "C++", "PHP" };
+
+        for (String language : languages) {
+            PagedSearchIterable<GHRepository> iterable = gh.searchRepositories()
+                    .language(language)
+                    .fork(GHFork.PARENT_ONLY) // no forks
+                    .visibility(GHRepository.Visibility.PUBLIC) // only public
+                    .stars(">49")
+                    .list();
+
+            PagedIterator<GHRepository> iterator = iterable.iterator();
+            while (iterator.hasNext()) {
+                GHRepository curr = iterator.next();
+                if (!curr.isArchived()) {
+                    repos.add(curr);
+                }
+            }
+        }
+
+        logger.info("Fetched {} repositories", repos.size());
+        writeToFile(Path.of(output), repos);
+    }
+
+    public static void secondary_filtering(String input, String output) throws IOException {
+        List<String> repos = CIExtractorMain.getProjectsFromCSV(input);
+
+        GitHubAPIAuthHelper ghHelper = new GitHubAPIAuthHelper();
+
+        List<String> filtered = repos.parallelStream()
+                .map(repoName -> {
+                    try {
+                        GHRepository curr = ghHelper.getNextGH().getRepository(repoName);
+                        if (hasWorkflowBeforeWindow(curr)) {
+                            logger.info("Filtered in {}", repoName);
+                            return repoName;
+                        }
+                    } catch (IOException e) {
+                        logger.error("Error filtering {} on CI usage, error: {}", repoName, e.getMessage());
+                    }
+                    return null;
+                })
+                .filter(Objects::nonNull)
+                .toList();
+
+        logger.info("Filtered {} repositories from {} total", filtered.size(), repos.size());
+        writeStringNamesToFile(Path.of(output), filtered);
+    }
+
+    public static void final_filtering(String input, String output) throws IOException {
+        List<String> repos = CIExtractorMain.getProjectsFromCSV(input);
+
+        List<GHRepository> filtered = new ArrayList<>();
+        GitHubAPIAuthHelper ghHelper = new GitHubAPIAuthHelper();
+        repos.parallelStream().filter(repoName -> {
+            logger.info("Filtering {} on label usage", repoName);
+            GHRepository ghRepo;
+            try {
+                ghRepo = ghHelper.getNextGH().getRepository(repoName);
+                if (uses(ghRepo)) {
+                    logger.info("Filtered in {}", repoName);
+                    return true;
+                } else {
+                    logger.info("Excluded {}", repoName);
+                    return false;
+                }
+            } catch (IOException e) {
+                logger.error("Error filtering {} on label usage", repoName);
+                return false;
+            }
+        });
+
+        try {
+            logger.info("Filtered in {} repositories", filtered.size());
+            writeToFile(Path.of(output), filtered);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void extractCommitCounts(String input, String output) throws IOException {
+        List<String> projects = CIExtractorMain.getProjectsFromCSV(input);
 
         String token = Dotenv.load().get("GITHUB_OAUTH");
         OkHttpClient client = new OkHttpClient();
 
-        String fileName = "projects-all-release-data.csv";
-        try (BufferedWriter writer = Files.newBufferedWriter(Path.of(fileName), StandardOpenOption.CREATE)) {
+        String since = "2024-05-15T00:00:00Z";
+        String until = "2025-05-15T00:00:00Z";
+
+        try (BufferedWriter writer = Files.newBufferedWriter(Path.of(output), StandardOpenOption.CREATE)) {
+            writer.write("project;\n");
+
+            projects.stream().forEach(project -> {
+                logger.info("Getting commit count since {} until {} for {}", since, until, project);
+                int commitCount = getCommitCountInWindow(client, project, token, since, until);
+                logger.info("Got {} commit count for project: {}", commitCount, project);
+
+                try {
+                    writer.write(project + ";" + commitCount + "\n");
+                } catch (Exception e) {
+                    logger.error("Error processing run " + project + ", " + commitCount + ": " + e.getMessage());
+                }
+            });
+
+            writer.flush();
+        }
+    }
+
+    public static void extractReleaseCounts(String input, String output) throws IOException {
+        List<String> projects = CIExtractorMain.getProjectsFromCSV(input);
+
+        String token = Dotenv.load().get("GITHUB_OAUTH");
+        OkHttpClient client = new OkHttpClient();
+
+        try (BufferedWriter writer = Files.newBufferedWriter(Path.of(output),
+                StandardOpenOption.CREATE)) {
             writer.write("project;\n");
 
             projects.stream().forEach(project -> {
@@ -193,22 +180,12 @@ public class ProjectSampler {
                 try {
                     writer.write(project + ";" + releaseCount + "\n");
                 } catch (Exception e) {
-                    logger.error("Error processing run " + project + ", " + releaseCount + ": "
-                            + e.getMessage());
+                    logger.error("Error processing run " + project + ", " + releaseCount + ": " + e.getMessage());
                 }
             });
 
             writer.flush();
         }
-    }
-
-    public static PagedSearchIterable<GHRepository> getReposIterable(GitHub gh) {
-        return gh.searchRepositories()
-                .language("java").language("javascript").language("python") // only those languages
-                .fork(GHFork.PARENT_ONLY) // no forks
-                .visibility(GHRepository.Visibility.PUBLIC) // only public
-                .stars(">49") // at least 50 stars
-                .list();
     }
 
     public static List<GHRepository> getFirstN(PagedSearchIterable<GHRepository> iterable, int n, int skip) {
@@ -261,6 +238,16 @@ public class ProjectSampler {
         logger.info(repo.getFullName() + " has {} issues and {} labelled", issues, labelled);
 
         return issues > 100 && (labelled / (double) issues) > 0.75;
+    }
+
+    public static boolean hasWorkflowBeforeWindow(GHRepository repo) throws IOException {
+        for (GHWorkflow workflow : repo.listWorkflows()) {
+            if (workflow.getCreatedAt().isBefore(dateCutoff)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static int getReleaseCount(OkHttpClient client, String repo, String token) {
@@ -335,14 +322,25 @@ public class ProjectSampler {
 
     private static void writeToFile(Path file, List<GHRepository> repos) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(file, StandardOpenOption.CREATE)) {
-            writer.write("project;\n");
-
             for (GHRepository repo : repos)
                 try {
                     writer.write(repo.getOwnerName() + "/" + repo.getName() + "\n");
                 } catch (Exception e) {
                     System.err.println("Error processing run " + repo.getOwnerName() + "/" + repo.getName() + ": "
                             + e.getMessage());
+                }
+
+            writer.flush();
+        }
+    }
+
+    private static void writeStringNamesToFile(Path file, List<String> repos) throws IOException {
+        try (BufferedWriter writer = Files.newBufferedWriter(file, StandardOpenOption.CREATE)) {
+            for (String repoName : repos)
+                try {
+                    writer.write(repoName + "\n");
+                } catch (Exception e) {
+                    System.err.println("Error processing run " + repoName + ": " + e.getMessage());
                 }
 
             writer.flush();
