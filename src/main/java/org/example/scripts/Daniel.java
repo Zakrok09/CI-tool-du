@@ -122,7 +122,7 @@ public class Daniel {
     }
 
     public static void danielComments(String group, int stepInDays, int threads) throws IOException {
-        List<String> items = ProjectListOps.getProjectListFromFile("intake/" + group + ".txt");
+        List<String> items = ProjectListOps.getProjectListFromFile("intake/" + group + ".csv");
 
         Instant dateCutoff = Instant.parse(Dotenv.load().get("DATE_CUTOFF"));
 
@@ -131,9 +131,9 @@ public class Daniel {
                     .map(project -> CompletableFuture.runAsync(() -> {
                         try {
                             String fileName = project.replace('/', '_') + "_comments" + ".csv";
-                            File output = new File("repos", fileName);
+                            File output = new File("sampled_commits_code_comments", fileName);
                             if (output.exists()) {
-                                logger.info("Skipping {} as it already exists.", project);
+                                logger.info("Skipping {} as it code comments are already extracted.", project);
                                 return;
                             }
                             Git repoGit = CachedGitCloner.getGit(project);
@@ -191,6 +191,13 @@ public class Daniel {
             List<CompletableFuture<Void>> futures = items.stream()
                     .map(project -> CompletableFuture.runAsync(() -> {
                         try {
+                            String fileName = project.replace('/', '_') + "_doc_stats" + ".csv";
+                            File output = new File("sampled_commits_doc_stats", fileName);
+                            if (output.exists()) {
+                                logger.info("Skipping {} as it doc stats are already extracted.", project);
+                                return;
+                            }
+
                             Git repoGit = CachedGitCloner.getGit(project);
                             JGitCommitSampler sampler = new JGitCommitSampler(repoGit.getRepository());
                             sampler.sampleCommitsWithDuration(Duration.ofDays(stepInDays), dateCutoff);

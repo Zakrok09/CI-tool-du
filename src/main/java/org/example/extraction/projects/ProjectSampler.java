@@ -42,7 +42,7 @@ public class ProjectSampler {
         // "intake/2-projects-all-release-data.csv");
 
         // Filter based on issue usage
-        final_filtering("intake/2-projects-tertiary-0-1200.csv", "intake/2-projects-final-0-1200.csv");
+        final_filtering("intake/2-0-1200-200-to-check.csv", "intake/2-projects-0-1200-200.csv");
     }
 
     public static PagedSearchIterable<GHRepository> getReposIterable(GitHub gh) {
