@@ -53,7 +53,7 @@ public class DataExtractor {
             releases.add(new Release(ghReleases.get(i), ghReleases.get(i + 1).getTagName()));
         }
 
-        if(!ghReleases.isEmpty()) {
+        if (!ghReleases.isEmpty()) {
             releases.add(new Release(ghReleases.getLast(), initCommit.sha1));
         }
 
@@ -104,12 +104,16 @@ public class DataExtractor {
     }
 
     public static void putAllInMap(Map<String, Pair<String, GHTreeEntry>> map, GHTree tree, String folder) {
+        if (tree == null)
+            return;
+
         tree.getTree().stream().forEach(e -> {
-                map.put(e.getPath(), Pair.of(folder + e.getPath(), e));
-            });
+            map.put(e.getPath(), Pair.of(folder + e.getPath(), e));
+        });
     }
 
-    public static void fillSearchEntries(Map<String, Pair<String, GHTreeEntry>> map, GHCommit commit) throws IOException {
+    public static void fillSearchEntries(Map<String, Pair<String, GHTreeEntry>> map, GHCommit commit)
+            throws IOException {
         GHTree rootTree = commit.getTree();
 
         GHTreeEntry docsTreeEntry = rootTree.getEntry("docs");
@@ -137,7 +141,7 @@ public class DataExtractor {
         if (prTreeEntry != null && prTreeEntry.asTree() != null) {
             putAllInMap(map, prTreeEntry.asTree(), "PULL_REQUEST_TEMPLATE/");
         }
-        
+
         GHTreeEntry ghTreeEntry = rootTree.getEntry(".github");
         if (ghTreeEntry != null && ghTreeEntry.asTree() != null) {
             GHTree ghTree = ghTreeEntry.asTree();
@@ -207,7 +211,7 @@ public class DataExtractor {
             String[] split = file.getFileName().split("/");
             String folder = split.length > 1 ? split[split.length - 2] : "";
             String fileName = split[split.length - 1];
-            
+
             if (DocumentationStats.DOC_FILE_MAP.containsKey(fileName)) {
                 int ind = DocumentationStats.DOC_FILE_MAP.get(fileName);
                 stats.documentationFiles[ind].additions = (int) file.getLinesAdded();
@@ -217,7 +221,8 @@ public class DataExtractor {
             if (folder.equals("ISSUE_TEMPLATE") && (fileName.endsWith(".md") || fileName.endsWith(".yml"))) {
                 stats.documentationFiles[n].additions += (int) file.getLinesAdded();
                 stats.documentationFiles[n].deletions += (int) file.getLinesDeleted();
-            } else if (fileName.equalsIgnoreCase("pull_request_template.md") || (folder.equals("PULL_REQUEST_TEMPLATE") && fileName.endsWith(".md"))) {
+            } else if (fileName.equalsIgnoreCase("pull_request_template.md")
+                    || (folder.equals("PULL_REQUEST_TEMPLATE") && fileName.endsWith(".md"))) {
                 stats.documentationFiles[n + 1].additions += (int) file.getLinesAdded();
                 stats.documentationFiles[n + 1].deletions += (int) file.getLinesDeleted();
             }
@@ -239,7 +244,7 @@ public class DataExtractor {
             String fileName = split[split.length - 1];
 
             GHTreeEntry entry = pair.getValue();
-            
+
             if (DocumentationStats.DOC_FILE_MAP.containsKey(fileName)) {
                 int ind = DocumentationStats.DOC_FILE_MAP.get(fileName);
                 stats.documentationFiles[ind].exists = true;
@@ -259,7 +264,9 @@ public class DataExtractor {
                     logger.info("[DataExtractor] Error reading issue template entry: " + e.getMessage());
                     throw new RuntimeException(e);
                 }
-            } else if (fileName.equalsIgnoreCase("pull_request_template.md") || (folder.equals("PULL_REQUEST_TEMPLATE") && fileName.endsWith(".md"))) {
+            } else if ((fileName.equalsIgnoreCase("pull_request_template.md")
+                    || fileName.equalsIgnoreCase("pull_request_template"))
+                    || (folder.equals("PULL_REQUEST_TEMPLATE") && fileName.endsWith(".md"))) {
                 stats.documentationFiles[n + 1].exists = true;
                 try {
                     stats.documentationFiles[n + 1].size += (int) Helper.countLines(entry.readAsBlob());

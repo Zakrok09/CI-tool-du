@@ -59,12 +59,11 @@ public class GitHubAPIAuthHelper {
                 this.proxyUser = Dotenv.load().get("PROXY_USER");
                 this.proxyPass = Dotenv.load().get("PROXY_PASS");
                 useProxy = Dotenv.load().get("USE_PROXY").equals("true");
+                logger.info("{} tokens loaded.", tokens.length);
             } catch (Exception e) {
                 this.tokens = new String[] { Dotenv.load().get("GITHUB_OAUTH") };
             }
         }
-
-        logger.info("{} tokens loaded.", tokens.length);
 
         try {
             Authenticator proxyAuthenticator = new Authenticator() {
