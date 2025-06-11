@@ -106,7 +106,7 @@ public class DataComputor {
             // For now, issues which were created before the window start are still counted.
             // Issues which are closed before the window start are not counted.
             if (startIndex < 0)
-                startIndex = 0;
+                continue;
             if (endIndex < 0 || endIndex >= intervalCount)
                 continue;
 

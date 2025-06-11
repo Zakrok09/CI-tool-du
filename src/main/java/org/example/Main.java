@@ -23,5 +23,6 @@ public class Main {
     public static void main(String[] args) throws IOException {
         logger.info("Starting script");
         FetchSettings.Daniel();
+        Daniel.danielDocumentationStats("included_repos.csv", 30, 5);
     }
 }

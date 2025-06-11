@@ -48,21 +48,21 @@ import org.example.utils.ProjectListOps;
 public class Daniel {
 
     public static void danielLoad(String group) throws IOException {
-        List<String> input = ProjectListOps.getProjectListFromFile("intake/" + group + ".txt");
+        List<String> input = ProjectListOps.getProjectListFromFile("intake/" + group);
 
-        int totalTokens = Dotenv.load().get("TOKEN_POOL").split(",").length;
+        int availableTokens = Dotenv.load().get("TOKEN_POOL").split(",").length;
+        int totalTokens = Math.min(input.size(), availableTokens);
+
         int threadsPerToken = 1;
         int batchSize = input.size() / totalTokens / threadsPerToken;
         
         List<Pair<Integer, List<String>>> searchPairs = new ArrayList<>();
-        for (int i = 0; i < totalTokens; ++i) {
-            for (int j = 0; j < threadsPerToken; ++j) {
-                int index = i * threadsPerToken + j;
-                List<String> repos = new ArrayList<>();
-
-                for (int k = 0; k < batchSize; ++k) {
-                    repos.add(input.get(index * batchSize + k));
-                }
+        int totalThreads = totalTokens * threadsPerToken;
+        for (int index = 0; index < totalThreads; ++index) {
+            int startIdx = index * batchSize;
+            int endIdx = (index == totalThreads - 1) ? input.size() : Math.min(input.size(), (index + 1) * batchSize);
+            if (startIdx < input.size()) {
+                List<String> repos = new ArrayList<>(input.subList(startIdx, endIdx));
                 searchPairs.add(Pair.of(index, repos));
             }
         }
@@ -114,15 +114,15 @@ public class Daniel {
         Duration duration = Duration.ofDays(30);
         int count = 12;
 
-        DataSaver.saveData(group + "-df", instant, duration, count, repos, DataComputor::computeDeliveryFrequency);
+        //DataSaver.saveData(group + "-df", instant, duration, count, repos, DataComputor::computeDeliveryFrequency);
         // DataSaver.saveData(group + "-clt", instant, duration, count, repos, DataComputor::computeCLT);
         // DataSaver.saveData(group + "-ds", instant, duration, count, repos, DataComputor::computeDeliverySize);
         DataSaver.saveData(group + "-mttr", instant, duration, count, repos, DataComputor::computeMTTR);
-        DataSaver.saveData(group + "-dc", instant, duration, count, repos, DataComputor::computeDefectCount);
+        //DataSaver.saveData(group + "-dc", instant, duration, count, repos, DataComputor::computeDefectCount);
     }
 
     public static void danielComments(String group, int stepInDays, int threads) throws IOException {
-        List<String> items = ProjectListOps.getProjectListFromFile("intake/" + group + ".csv");
+        List<String> items = ProjectListOps.getProjectListFromFile("intake/" + group);
 
         Instant dateCutoff = Instant.parse(Dotenv.load().get("DATE_CUTOFF"));
 
@@ -180,7 +180,7 @@ public class Daniel {
     }
 
     public static void danielDocumentationStats(String group, int stepInDays, int threads) throws IOException {
-        List<String> items = ProjectListOps.getProjectListFromFile("intake/" + group + ".txt");
+        List<String> items = ProjectListOps.getProjectListFromFile("intake/" + group);
 
         Instant dateCutoff = Instant.parse(Dotenv.load().get("DATE_CUTOFF"));
 
