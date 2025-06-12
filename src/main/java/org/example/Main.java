@@ -8,6 +8,7 @@ import org.example.scripts.Serban;
 
 import org.example.fetching.CachedGitCloner;
 import org.example.extraction.JGitCommitSampler;
+import org.example.extraction.ci.CIExtractorMain;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.revwalk.RevCommit;
 
@@ -23,6 +24,6 @@ public class Main {
     public static void main(String[] args) throws IOException {
         logger.info("Starting script");
         FetchSettings.Daniel();
-        Daniel.danielDocumentationStats("included_repos.csv", 30, 5);
+        Daniel.danielComments("missing_comments.csv", 30, 5);
     }
 }

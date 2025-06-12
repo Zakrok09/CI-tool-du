@@ -55,7 +55,7 @@ public class Daniel {
 
         int threadsPerToken = 1;
         int batchSize = input.size() / totalTokens / threadsPerToken;
-        
+
         List<Pair<Integer, List<String>>> searchPairs = new ArrayList<>();
         int totalThreads = totalTokens * threadsPerToken;
         for (int index = 0; index < totalThreads; ++index) {
@@ -80,12 +80,12 @@ public class Daniel {
                     index, startIndex, endIndex);
             repos.forEach(project -> {
                 try {
-                        CachedGitCloner.getGit(project);
-                        CachedDataRepoFetcher.getRepoData(ghHelper.getNextGH(), project);
-                        Main.logger.info("{} downloaded successfully.", project);
-                    } catch (Exception e) {
-                        System.out.println(e.getMessage());
-                    }
+                    CachedGitCloner.getGit(project);
+                    CachedDataRepoFetcher.getRepoData(ghHelper.getNextGH(), project);
+                    Main.logger.info("{} downloaded successfully.", project);
+                } catch (Exception e) {
+                    System.out.println(e.getMessage());
+                }
             });
         });
 
@@ -98,7 +98,7 @@ public class Daniel {
     }
 
     public static void danielKPI(String group) throws IOException {
-        String path = "intake/" + group + ".txt";     
+        String path = "intake/" + group + ".txt";
         List<String> items = ProjectListOps.getProjectListFromFile(path);
 
         GitHubAPIAuthHelper ghHelper = new GitHubAPIAuthHelper();
@@ -114,11 +114,15 @@ public class Daniel {
         Duration duration = Duration.ofDays(30);
         int count = 12;
 
-        //DataSaver.saveData(group + "-df", instant, duration, count, repos, DataComputor::computeDeliveryFrequency);
-        // DataSaver.saveData(group + "-clt", instant, duration, count, repos, DataComputor::computeCLT);
-        // DataSaver.saveData(group + "-ds", instant, duration, count, repos, DataComputor::computeDeliverySize);
+        // DataSaver.saveData(group + "-df", instant, duration, count, repos,
+        // DataComputor::computeDeliveryFrequency);
+        // DataSaver.saveData(group + "-clt", instant, duration, count, repos,
+        // DataComputor::computeCLT);
+        // DataSaver.saveData(group + "-ds", instant, duration, count, repos,
+        // DataComputor::computeDeliverySize);
         DataSaver.saveData(group + "-mttr", instant, duration, count, repos, DataComputor::computeMTTR);
-        //DataSaver.saveData(group + "-dc", instant, duration, count, repos, DataComputor::computeDefectCount);
+        // DataSaver.saveData(group + "-dc", instant, duration, count, repos,
+        // DataComputor::computeDefectCount);
     }
 
     public static void danielComments(String group, int stepInDays, int threads) throws IOException {
@@ -136,14 +140,21 @@ public class Daniel {
                                 logger.info("Skipping {} as it code comments are already extracted.", project);
                                 return;
                             }
+                            File repoClone = new File("clones", project.replace("/", "_"));
                             Git repoGit = CachedGitCloner.getGit(project);
                             JGitCommitSampler sampler = new JGitCommitSampler(repoGit.getRepository());
                             sampler.sampleCommitsWithDuration(Duration.ofDays(stepInDays), dateCutoff);
                             List<RevCommit> sampledCommits = sampler.getSampledCommits();
 
                             RepoRetrospect repoRetrospect = new RepoRetrospect(repoGit);
+                            List<RepoRetrospect.CommitPair<Double>> results = repoRetrospect
+                                    .commentPecentageWalk(sampledCommits);
 
-                            saveCommentData(project, repoRetrospect.commentPecentageWalk(sampledCommits));
+                            if (!deleteDirectoryRecursively(repoClone)) {
+                                logger.warn("Failed to delete directory: {}", repoClone.getAbsolutePath());
+                            }
+
+                            saveCommentData(project, results);
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }
@@ -153,6 +164,21 @@ public class Daniel {
             // Wait for all tasks to complete
             futures.forEach(CompletableFuture::join);
         }
+    }
+
+    public static boolean deleteDirectoryRecursively(File dir) {
+        if (dir.isDirectory()) {
+            File[] children = dir.listFiles();
+            if (children != null) {
+                for (File child : children) {
+                    boolean success = deleteDirectoryRecursively(child);
+                    if (!success) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return dir.delete();
     }
 
     private static void saveCommentData(String repoName, List<RepoRetrospect.CommitPair<Double>> pairs) {
@@ -203,7 +229,7 @@ public class Daniel {
                             sampler.sampleCommitsWithDuration(Duration.ofDays(stepInDays), dateCutoff);
                             List<RevCommit> sampledCommits = sampler.getSampledCommits();
 
-                            List<Pair<RevCommit,DocumentationStats>> pairs = new ArrayList<>();
+                            List<Pair<RevCommit, DocumentationStats>> pairs = new ArrayList<>();
 
                             logger.info("Extracting documentation stats for {}", project);
                             GitHub gh = ghHelper.getNextGH();
@@ -229,10 +255,11 @@ public class Daniel {
         long seconds = elapsedSeconds
                 % 60;
         Main.logger
-                .info(String.format("Extracted documentation stats for %d projects in %dmin%02dsec.", items.size(), minutes, seconds));
+                .info(String.format("Extracted documentation stats for %d projects in %dmin%02dsec.", items.size(),
+                        minutes, seconds));
     }
 
-    private static void saveStatsData(String repoName, List<Pair<RevCommit,DocumentationStats>> pairs) {
+    private static void saveStatsData(String repoName, List<Pair<RevCommit, DocumentationStats>> pairs) {
         logger.info("Saving stats data for {}", repoName);
         int n = DocumentationStats.DOC_FILE_LIST.length;
 
@@ -254,7 +281,7 @@ public class Daniel {
             csvWriter.append(",pull request templates,exists,size");
             csvWriter.append("\n");
 
-            for (Pair<RevCommit,DocumentationStats> pair : pairs) {
+            for (Pair<RevCommit, DocumentationStats> pair : pairs) {
                 RevCommit revCommit = pair.getKey();
                 DocumentationStats stats = pair.getValue();
 

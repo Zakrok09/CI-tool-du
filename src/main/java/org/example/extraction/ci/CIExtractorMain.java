@@ -29,7 +29,7 @@ public class CIExtractorMain {
     // https://open.spotify.com/track/4RvWPyQ5RL0ao9LPZeSouE?si=f4e83e3f85714521
     public static void main(String[] args) {
         logger.info("Starting CI workflow extraction");
-        List<String> projectNames = getProjectsFromCSV("intake/final_for_repo_data_1.txt");
+        List<String> projectNames = getProjectsFromCSV("intake/included_repos.csv");
 
         int totalTokens = 5;
         int totalProjects = projectNames.size();
