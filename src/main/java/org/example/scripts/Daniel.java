@@ -98,7 +98,7 @@ public class Daniel {
     }
 
     public static void danielKPI(String group) throws IOException {
-        String path = "intake/" + group + ".txt";
+        String path = "intake/" + group;
         List<String> items = ProjectListOps.getProjectListFromFile(path);
 
         GitHubAPIAuthHelper ghHelper = new GitHubAPIAuthHelper();
@@ -110,19 +110,17 @@ public class Daniel {
             }
         }).toList();
 
-        Instant instant = LocalDate.of(2025, 5, 1).atStartOfDay(ZoneOffset.UTC).toInstant();
+        Instant instant = LocalDate.of(2025, 5, 15).atStartOfDay(ZoneOffset.UTC).toInstant();
         Duration duration = Duration.ofDays(30);
         int count = 12;
 
-        // DataSaver.saveData(group + "-df", instant, duration, count, repos,
-        // DataComputor::computeDeliveryFrequency);
+        DataSaver.saveData(group + "-df", instant, duration, count, repos, DataComputor::computeDeliveryFrequency);
         // DataSaver.saveData(group + "-clt", instant, duration, count, repos,
         // DataComputor::computeCLT);
         // DataSaver.saveData(group + "-ds", instant, duration, count, repos,
         // DataComputor::computeDeliverySize);
         DataSaver.saveData(group + "-mttr", instant, duration, count, repos, DataComputor::computeMTTR);
-        // DataSaver.saveData(group + "-dc", instant, duration, count, repos,
-        // DataComputor::computeDefectCount);
+        DataSaver.saveData(group + "-dc", instant, duration, count, repos, DataComputor::computeDefectCount);
     }
 
     public static void danielComments(String group, int stepInDays, int threads) throws IOException {
