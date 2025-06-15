@@ -26,7 +26,7 @@ public class CIContentParser {
             "cpp", Pattern.compile("\\b(make|ctest|cmake|godot)(\\s+[\\w\\-:.=/]*)*\\s+(test|--test)\\b", Pattern.CASE_INSENSITIVE),
             "c", Pattern.compile("\\b(ctest|cmake\\s+--build.*|make\\s+test|godot\\s+test)\\b", Pattern.CASE_INSENSITIVE),
             "php", Pattern.compile("\\b(vendor/bin/)?(phpunit|pest|behat)\\b", Pattern.CASE_INSENSITIVE),
-	    "c#". Pattern.compile("\\b(dotnet\\s+(test|vstest))\\b", Pattern.CASE_INSENSITIVE)
+	        "c#", Pattern.compile("\\b(dotnet\\s+(test|vstest))\\b", Pattern.CASE_INSENSITIVE)
     );
 
     /**

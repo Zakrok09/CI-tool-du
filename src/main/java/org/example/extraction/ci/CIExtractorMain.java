@@ -64,8 +64,8 @@ public class CIExtractorMain {
 
             logger.info("Starting thread for token index {} with start {} and end {}",
                     index, startIndex, endIndex);
-             extractCIWorkflowsToFiles(gh, repos);
-             //saveAllWorkflowRunsFromExtracted(gh, repos);
+             //extractCIWorkflowsToFiles(gh, repos);
+             saveAllWorkflowRunsFromExtracted(gh, repos);
         });
 
         long end = System.nanoTime();
