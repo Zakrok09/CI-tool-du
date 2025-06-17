@@ -34,6 +34,10 @@ public class TestTriggerComputer {
                             .flatMap(Collection::stream)
                             .forEach(trigger -> {
                                 KnownEvent event = KnownEvent.valueOf(trigger.toUpperCase());
+
+                                if (event.equals(KnownEvent.WORKFLOW_DISPATCH))
+                                    System.out.println("Found workflow dispatch in file: " + file.getName());
+
                                 frequencies[event.ordinal()]++;
                             });
                 } catch (IOException e) {

@@ -71,11 +71,12 @@ public class ExtractionTest {
         Map<String, List<Integer>> freqs = tfc.calculateFrequency();
 
         // alphabetically sort the map by key
+        List<Map.Entry<String, List<Integer>>> sortedEntries = new ArrayList<>(freqs.entrySet());
 
-        for (Map.Entry<String, List<Integer>> entry : freqs.entrySet().stream().sorted((a, b) ->
-                a.getKey().charAt(0) - b.getKey().charAt(0)
-        ).toList()) {
-            System.out.println(entry.getKey() + ": " + entry.getValue() + " (total: " + entry.getValue().stream().mapToInt(Integer::intValue).sum() + ")");
+        sortedEntries.sort(Map.Entry.comparingByKey());
+
+        for (Map.Entry<String, List<Integer>> entry : sortedEntries) {
+            System.out.println(entry.getKey() + "," + entry.getValue().stream().map(String::valueOf).reduce((a, b) -> a + "," + b).orElse(""));
         }
     }
 
@@ -113,8 +114,9 @@ public class ExtractionTest {
 
         System.out.println("Trigger execution frequencies:");
         for (Pair<String, Integer> pair : freqs) {
-            System.out.println(pair.getFirst() + ": " + pair.getSecond());
+            System.out.println(pair.getFirst() + ";" + pair.getSecond());
         }
+    }
 
     }
 //

@@ -63,30 +63,15 @@ public class TestFrequencyComputer {
 
         for (String repoName : workflowToRuns.keySet()) {
             List<WorkflowRun> runs = workflowToRuns.get(repoName);
-            int countedRuns = 0;
-            int skippedRuns = 0;
 
             for (WorkflowRun run : runs) {
-                // The filtering based on cutoff date is already done in parseFiles()
-                // Calculate which time interval this run belongs to
                 long millisSinceCutoff = run.start_time.toEpochMilli() - start.toEpochMilli();
                 int stepIndex = (int) (millisSinceCutoff / stepInterval.toMillis());
 
                 // Only count runs that fall within our analysis window
                 if (stepIndex >= 0 && stepIndex < numberOfSteps) {
                     frequencies.get(repoName).set(stepIndex, frequencies.get(repoName).get(stepIndex) + 1);
-                    countedRuns++;
-                } else {
-                    skippedRuns++;
                 }
-            }
-
-            int totalRuns = workflowToRuns.get(repoName).size();
-            int sumFrequencies = frequencies.get(repoName).stream().mapToInt(Integer::intValue).sum();
-
-            if (countedRuns + skippedRuns != totalRuns || countedRuns != sumFrequencies) {
-                System.out.println(String.format("Inconsistency for {}: total={}, counted={}, skipped={}, sum={}",
-                        repoName, totalRuns, countedRuns, skippedRuns, sumFrequencies));
             }
         }
 
