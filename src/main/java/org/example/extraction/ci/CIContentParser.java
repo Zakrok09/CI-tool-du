@@ -24,7 +24,9 @@ public class CIContentParser {
             "python", Pattern.compile("\\b(pytest|python\\s+-m\\s+test|unittest|tox|uv\\s+run.*tox)\\b", Pattern.CASE_INSENSITIVE),
             "java", Pattern.compile("\\b(mvnw?|gradle|gradlew)(\\s+[\\w\\-:.=$/{}'!]+)*\\s+(test|verify)\\b", Pattern.CASE_INSENSITIVE),
             "cpp", Pattern.compile("\\b(make|ctest|cmake|godot)(\\s+[\\w\\-:.=/]*)*\\s+(test|--test)\\b", Pattern.CASE_INSENSITIVE),
-            "c", Pattern.compile("\\b(ctest|cmake\\s+--build.*|make\\s+test|godot\\s+test)\\b", Pattern.CASE_INSENSITIVE)
+            "c", Pattern.compile("\\b(ctest|cmake\\s+--build.*|make\\s+test|godot\\s+test)\\b", Pattern.CASE_INSENSITIVE),
+            "php", Pattern.compile("\\b(vendor/bin/)?(phpunit|pest|behat)\\b", Pattern.CASE_INSENSITIVE),
+	        "c#", Pattern.compile("\\b(dotnet\\s+(test|vstest))\\b", Pattern.CASE_INSENSITIVE)
     );
 
     /**

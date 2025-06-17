@@ -29,9 +29,9 @@ public class CIExtractorMain {
     // https://open.spotify.com/track/4RvWPyQ5RL0ao9LPZeSouE?si=f4e83e3f85714521
     public static void main(String[] args) {
         logger.info("Starting CI workflow extraction");
-        List<String> projectNames = getProjectsFromCSV("intake/final_for_repo_data_1.txt");
+        List<String> projectNames = getProjectsFromCSV("intake/to-take-wf-runs-from.csv");
 
-        int totalTokens = 5;
+        int totalTokens = 3;
         int totalProjects = projectNames.size();
         int batchSize = totalProjects / totalTokens;
         int remainder = totalProjects % totalTokens;
@@ -64,8 +64,8 @@ public class CIExtractorMain {
 
             logger.info("Starting thread for token index {} with start {} and end {}",
                     index, startIndex, endIndex);
-            // extractCIWorkflowsToFiles(gh, repos);
-            saveAllWorkflowRunsFromExtracted(gh, repos);
+             //extractCIWorkflowsToFiles(gh, repos);
+             saveAllWorkflowRunsFromExtracted(gh, repos);
         });
 
         long end = System.nanoTime();
