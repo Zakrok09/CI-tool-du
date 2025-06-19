@@ -161,7 +161,7 @@ public class DataComputor {
             // Keep walking backwards until we find a release which is published before the issue is created
             while (created_at.isBefore(releases.get(r_pointer).publishedAt)) r_pointer++;
 
-            if (issue.isBug) failures_per_release[r_pointer]++; // TODO: Possibly add time cutoff since CFR could be too big
+            if (issue.isBug) failures_per_release[r_pointer]++;
         }
 
         Double[] cfr_per_interval = new Double[intervalCount];

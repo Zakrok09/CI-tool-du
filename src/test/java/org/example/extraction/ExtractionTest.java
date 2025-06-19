@@ -37,9 +37,6 @@ public class ExtractionTest {
                 testCounter.countUnitTestsAtCommit(gitRepo.getRepository().getDirectory().getParentFile(),
                         sampler.sampleAllCommits().getFirst())
         );
-//        repoRetrospect
-//                .walkSampledCommits(sampler.sampleCommitsWithDuration(Duration.ofDays(1L)), testCounter)
-//                .forEach(System.out::println);
     }
 
     @Test
@@ -117,27 +114,4 @@ public class ExtractionTest {
             System.out.println(pair.getFirst() + ";" + pair.getSecond());
         }
     }
-
-    }
-//
-//    @Test
-//    public void test7() throws IOException {
-//        TriggerExecFreqComputer tefc = new TriggerExecFreqComputer("final_for_repo_data.csv");
-//        Map<String, Integer> frequenciesMap = tefc.frequencyOfTriggerExecutionsMAP();
-//
-//        System.out.println("Trigger execution frequencies (MAP) sorted:");
-//
-//        List<Pair<String, Integer>> freqs = new ArrayList<>();
-//
-//        for (Map.Entry<String, Integer> entry : frequenciesMap.entrySet()) {
-//            if (entry.getValue() > 0) {
-//                freqs.add(new Pair<>(entry.getKey(), entry.getValue()));
-//            }
-//        }
-//
-//        freqs.sort((a, b) -> Integer.compare(b.getSecond(), a.getSecond()));
-//        for (Pair<String, Integer> pair : freqs) {
-//            System.out.println(pair.getFirst() + ": " + pair.getSecond());
-//        }
-//    }
 }

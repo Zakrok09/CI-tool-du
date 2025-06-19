@@ -64,7 +64,7 @@ public class CIExtractorMain {
 
             logger.info("Starting thread for token index {} with start {} and end {}",
                     index, startIndex, endIndex);
-             //extractCIWorkflowsToFiles(gh, repos);
+
              saveAllWorkflowRunsFromExtracted(gh, repos);
         });
 
@@ -75,10 +75,6 @@ public class CIExtractorMain {
                 % 60;
         Main.logger
                 .info(String.format("Downloaded %d projects in %dmin%02dsec.", projectNames.size(), minutes, seconds));
-
-        // Original extraction
-        // extractCIWorkflowsToFiles(gh, projectNames);
-        // saveAllWorkflowRunsFromExtracted(gh, projectNames);
     }
 
     public static List<String> getProjectsFromCSV(String fileName) {

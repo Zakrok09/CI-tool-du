@@ -57,64 +57,6 @@ public class JUnitTestCounter implements TestCounter {
 
     }
 
-
-//    @Override
-//    public int countUnitTestsAtCommit(File repoRoot, RevCommit commit) {
-//        logger.debug("Sampling JUnit session");
-//
-//        try {
-
-    /// /            compileJavaProject(repoRoot);
-//            File classesDir = new File("/home/eccyboo/IdeaProjects/CItoLDU/clones/TEAMMATES_teammates/build/classes/java/test");
-//
-//            if (!classesDir.exists()) {
-//                logger.error("Test classes directory does not exist: {}", classesDir.getAbsolutePath());
-//                return 0;
-//            }
-//
-//
-//            logger.debug("Test classes directory exists with {} files",
-//                    classesDir.listFiles() != null ? classesDir.listFiles().length : 0);
-//
-//            try (LauncherSession session = LauncherFactory.openSession()) {
-//
-//                logger.debug("Building discovery request");
-//                LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
-//                        .selectors(selectClasspathRoots(singleton(Path.of("/home/eccyboo/IdeaProjects/CItoLDU/clones/TEAMMATES_teammates/build/classes/java/test"))))
-//                        .configurationParameter("")
-//                        .build();
-//
-//                logger.debug("Sending discovery request");
-//                TestPlan testPlan = session.getLauncher().discover(request);
-//                logger.debug("Discovery request sent!");
-//
-//                AtomicInteger testCount = new AtomicInteger(0);
-//                testPlan.getRoots().forEach(root -> {
-//                    logger.debug("Found root: {}", root.getDisplayName());
-//                    testPlan.getChildren(root).forEach(child -> {
-//                        logger.debug("  Child: {} (isTest={})", child.getDisplayName(), child.isTest());
-//                        if (child.isTest()) {
-//                            testCount.incrementAndGet();
-//                        }
-//                    });
-//                });
-//
-//                int methodCount = (int) testPlan.countTestIdentifiers(testIdentifier -> {
-//                    boolean isTest = testIdentifier.isTest() && testIdentifier.getSource().isPresent();
-//                    if (isTest) {
-//                        logger.debug("Found test: {}", testIdentifier.getDisplayName());
-//                    }
-//                    return isTest;
-//                });
-//
-//                logger.debug("Found {} test classes and {} test methods", testCount.get(), methodCount);
-//                return methodCount;
-//            }
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        }
-//
-//    }
     private void compileJavaProject(File repoRoot) throws IOException, InterruptedException {
         ProcessBuilder builder = getCompileProcessBuilder(repoRoot);
 

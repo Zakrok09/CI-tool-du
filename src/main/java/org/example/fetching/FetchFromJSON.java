@@ -52,10 +52,5 @@ public class FetchFromJSON {
 
 
         return projects;
-
-//        for (String project : projects) {
-//            CachedDataRepoFetcher.getRepoData(gh, project);
-//            CachedGitCloner.getGit(project);
-//        }
     }
 }
