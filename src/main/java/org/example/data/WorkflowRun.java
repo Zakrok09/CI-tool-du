@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.time.Instant;
 
+import static org.example.Main.logger;
+
 public class WorkflowRun extends GitHubObject implements Serializable {
     public String name;
     public Instant start_time;
@@ -40,18 +42,25 @@ public class WorkflowRun extends GitHubObject implements Serializable {
     public WorkflowRun() {}
 
     public static WorkflowRun fromCSV(String csvLine) {
-        String[] parts = csvLine.split(";");
-        WorkflowRun run = new WorkflowRun();
-        run.id = Long.parseLong(parts[0]);
-        run.createdAt = Instant.parse(parts[1]);
-        run.updatedAt = Instant.parse(parts[2]);
-        run.start_time = Instant.parse(parts[4]);
-        run.name = parts[3];
-        run.triggererId = Long.parseLong(parts[5]);
-        run.commit_id = parts[6];
-        run.status = GHWorkflowRun.Conclusion.valueOf(parts[7].toUpperCase());
-        run.event = parts[8];
-        return run;
+        try {
+            String[] parts = csvLine.split(";");
+            WorkflowRun run = new WorkflowRun();
+            run.id = Long.parseLong(parts[0]);
+            run.createdAt = Instant.parse(parts[1]);
+            run.updatedAt = Instant.parse(parts[2]);
+            run.start_time = Instant.parse(parts[4]);
+            run.name = parts[3];
+            run.triggererId = Long.parseLong(parts[5]);
+            run.commit_id = parts[6];
+            run.status = GHWorkflowRun.Conclusion.valueOf(parts[7].toUpperCase());
+            run.event = parts[8];
+            return run;
+        } catch (IllegalArgumentException e) {
+            if (csvLine.trim().isEmpty()) return null;
+            return null;
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return null;
+        }
     }
 
     public String toCSV() {

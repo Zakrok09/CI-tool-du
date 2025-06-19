@@ -3,9 +3,10 @@ package org.example.extraction;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
-import org.example.extraction.testcounter.TestCounter;
+import org.example.extraction.testcounter.JUnitTestCounter;
 
 import java.io.BufferedReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -70,22 +71,41 @@ public class RepoRetrospect {
     /**
      * Walk over the sampled commits
      */
-    public List<CommitPair<Integer>> walkSampledCommits(List<RevCommit> sampled, TestCounter counter)
-            throws GitAPIException {
-        List<CommitPair<Integer>> results = new ArrayList<>();
+    public List<CommitPair<String>> walkAndTestSampledCommits(List<RevCommit> sampled, String project) throws GitAPIException {
+        List<CommitPair<String>> results = new ArrayList<>();
         for (RevCommit commit : sampled) {
+            System.out.println("Walking " + commit.getName() + " " + commit.getId());
             try {
                 checkout(commit);
-                int testCount = counter.countUnitTestsAtCommit(repoGit.getRepository().getDirectory().getParentFile(),
-                        commit);
-                results.add(new CommitPair<>(commit, testCount));
+                System.out.println("checked out");
+
+                JUnitTestCounter jutc = new JUnitTestCounter();
+
+                System.out.println("getting tests");
+                String output_mvn_test = jutc.getTestOutputAtCommit(repoGit.getRepository().getDirectory());
+                appendToFile(project, output_mvn_test);
+
+                results.add(new CommitPair<>(commit, output_mvn_test));
             } catch (GitAPIException e) {
                 restore();
-                throw new RuntimeException();
+                System.out.println("MOVING ERROR " + e);
             }
         }
         restore();
         return results;
+    }
+
+    private void appendToFile(String project, String output) {
+        String file = "outputs/outputs-" + project.replace("/", "_") + ".txt";
+        try (FileWriter fileWriter = new FileWriter(file, true)) {
+            System.out.println(output);
+            fileWriter.write(output);
+        } catch (IOException e) {
+            System.out.println("FAILED READING!!!");
+            System.out.println("OUTPUT FOR PROJECT: " + project + "\n\n\n\n\n\n\n\n");
+            System.out.println(output);
+            System.out.println("\n\n\n\n\n\n\n\n\n\n");
+        }
     }
 
     // TODO: Change this when collection algorithm is generic.

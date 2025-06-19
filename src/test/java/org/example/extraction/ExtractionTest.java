@@ -1,45 +1,50 @@
 package org.example.extraction;
 
+import io.github.cdimascio.dotenv.Dotenv;
 import kotlin.Pair;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.example.computation.TestFrequencyComputer;
 import org.example.computation.TestTriggerComputer;
 import org.example.computation.TriggerExecFreqComputer;
-import org.example.extraction.ci.CIContentParser;
-import org.example.extraction.ci.CIWorkflowExtractor;
 import org.example.extraction.ci.KnownEvent;
-import org.example.extraction.testcounter.JUnitTestCounter;
-import org.example.extraction.testcounter.TestCounter;
 import org.example.fetching.CachedGitCloner;
-import org.example.utils.GitHubAPIAuthHelper;
+import org.example.utils.ProjectListOps;
 import org.junit.jupiter.api.Test;
-import org.kohsuke.github.GitHub;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
+
+import static org.example.Main.logger;
 
 public class ExtractionTest {
 
     @Test
     public void test1() throws IOException {
-        Git gitRepo = CachedGitCloner.getGit("kafka-ops/julie");
-        RepoRetrospect repoRetrospect = new RepoRetrospect(gitRepo);
+        logger.info("STARTING");
+        List<String> projects = ProjectListOps.getProjectListFromFile("intake/maven-projects.csv");
 
-        JGitCommitSampler sampler = new JGitCommitSampler(gitRepo.getRepository());
+        for (String project : projects) {
+            Git gitRepo = CachedGitCloner.getGit(project);RepoRetrospect repoRetrospect = new RepoRetrospect(gitRepo);
 
-        TestCounter testCounter = new JUnitTestCounter();
+            JGitCommitSampler sampler = new JGitCommitSampler(gitRepo.getRepository());
 
-        System.out.println(
-                testCounter.countUnitTestsAtCommit(gitRepo.getRepository().getDirectory().getParentFile(),
-                        sampler.sampleAllCommits().getFirst())
-        );
-//        repoRetrospect
-//                .walkSampledCommits(sampler.sampleCommitsWithDuration(Duration.ofDays(1L)), testCounter)
-//                .forEach(System.out::println);
+            Dotenv dotenv = Dotenv.load();
+            String cutoffStr = dotenv.get("DATE_CUTOFF");
+            sampler.sampleCommitsWithDuration(Duration.ofDays(30), Instant.parse(cutoffStr));
+
+            try {
+                logger.info("Starting to list for {}", project);
+                repoRetrospect.walkAndTestSampledCommits(sampler.getSampledCommits(), project);
+            } catch (GitAPIException e) {
+                logger.error("Problem with project: ", e);
+                System.err.println("something bad happened: " + e.getMessage());
+            }
+        }
     }
 
     @Test
@@ -57,17 +62,24 @@ public class ExtractionTest {
         TestTriggerComputer ttc = new TestTriggerComputer();
         int[] freqs = ttc.frequencyOfTriggers();
 
+        List<Pair<String, Integer>> freqers = new ArrayList<>();
+
+        for (KnownEvent event : KnownEvent.values())
+            freqers.add(new Pair<>(event.name(), freqs[event.ordinal()]));
+
+        freqers.sort(Comparator.comparing(Pair::component1));
+
         System.out.println("total tests: " + ttc.countWorkflows());
 
-        for (int i = 0; i < freqs.length; i++) {
-            if( freqs[i] == 0) continue;
-            System.out.println("Frequency of " + KnownEvent.values()[i] + ": " + freqs[i]);
+        for (var freq : freqers) {
+            if (freq.component2() == 0) continue;
+            System.out.println("Frequency of " + freq.component1() + ": " + freq.component2());
         }
     }
 
     @Test
     public void test4() {
-        TestFrequencyComputer tfc = new TestFrequencyComputer(Duration.ofDays(30L), Duration.ofDays(365L));
+        var tfc = new TestFrequencyComputer(Duration.ofDays(30L), Duration.ofDays(365L), "intake/pr-wf.csv");
         Map<String, List<Integer>> freqs = tfc.calculateFrequency();
 
         // alphabetically sort the map by key
@@ -98,8 +110,8 @@ public class ExtractionTest {
     }
 
     @Test
-    public void test6() throws IOException {
-        TriggerExecFreqComputer tefc = new TriggerExecFreqComputer("final_for_repo_data.csv");
+    public void test6() {
+        TriggerExecFreqComputer tefc = new TriggerExecFreqComputer("intake/pr-wf.csv");
         int[] frequencies = tefc.frequencyOfTriggerExecutions();
         List<Pair<String, Integer>> freqs = new ArrayList<>();
 
@@ -110,7 +122,7 @@ public class ExtractionTest {
             }
         }
 
-        freqs.sort((a, b) -> Integer.compare(b.getSecond(), a.getSecond()));
+        freqs.sort(Comparator.comparing(Pair::component1));
 
         System.out.println("Trigger execution frequencies:");
         for (Pair<String, Integer> pair : freqs) {
@@ -118,26 +130,9 @@ public class ExtractionTest {
         }
     }
 
+    @Test
+    public void test7() {
+        TriggerExecFreqComputer tefc = new TriggerExecFreqComputer("intake/pr-wf.csv");
+        tefc.statistics2();
     }
-//
-//    @Test
-//    public void test7() throws IOException {
-//        TriggerExecFreqComputer tefc = new TriggerExecFreqComputer("final_for_repo_data.csv");
-//        Map<String, Integer> frequenciesMap = tefc.frequencyOfTriggerExecutionsMAP();
-//
-//        System.out.println("Trigger execution frequencies (MAP) sorted:");
-//
-//        List<Pair<String, Integer>> freqs = new ArrayList<>();
-//
-//        for (Map.Entry<String, Integer> entry : frequenciesMap.entrySet()) {
-//            if (entry.getValue() > 0) {
-//                freqs.add(new Pair<>(entry.getKey(), entry.getValue()));
-//            }
-//        }
-//
-//        freqs.sort((a, b) -> Integer.compare(b.getSecond(), a.getSecond()));
-//        for (Pair<String, Integer> pair : freqs) {
-//            System.out.println(pair.getFirst() + ": " + pair.getSecond());
-//        }
-//    }
 }

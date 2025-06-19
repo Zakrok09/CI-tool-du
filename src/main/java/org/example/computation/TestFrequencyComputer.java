@@ -27,16 +27,19 @@ import static org.example.Main.logger;
 public class TestFrequencyComputer {
     private final Duration stepInterval;
     private final Duration durationInterval;
+    private final String file;
 
     /**
      * Constructor for TestFrequencyComputer.
      *
      * @param stepInterval     the interval length of each step
      * @param durationInterval the total duration interval
+     * @param file path from route to the csv with all projects to take
      */
-    public TestFrequencyComputer(Duration stepInterval, Duration durationInterval) {
+    public TestFrequencyComputer(Duration stepInterval, Duration durationInterval, String file) {
         this.stepInterval = stepInterval;
         this.durationInterval = durationInterval;
+        this.file = file;
     }
 
     /**
@@ -92,7 +95,7 @@ public class TestFrequencyComputer {
         if (cutoffStr == null) throw new RuntimeException("DATE_CUTOFF env variable not set!");
         Instant start = Instant.parse(cutoffStr);
 
-        List<String> projects = Helper.getFileLinesSafe("final_for_repo_data.csv");
+        List<String> projects = Helper.getFileLinesSafe(file);
 
         Map<String, List<WorkflowRun>> workflowRuns = new HashMap<>();
 
@@ -119,6 +122,9 @@ public class TestFrequencyComputer {
                     if (line.trim().isEmpty()) continue;
 
                     WorkflowRun run = WorkflowRun.fromCSV(line);
+
+                    if(run == null) continue;
+
                     if (run.start_time.isBefore(start)) continue;
                     workflowRuns.putIfAbsent(project, new ArrayList<>());
                     workflowRuns.get(project).add(run);

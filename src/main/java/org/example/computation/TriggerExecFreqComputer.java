@@ -91,6 +91,62 @@ public class TriggerExecFreqComputer {
         return frequencies;
     }
 
+    public void statistics2() {
+        List<WorkflowRun> allRuns = allRuns();
+
+        int[] all_runs = new int[KnownEvent.values().length];
+        int[] failed_runs = new int[KnownEvent.values().length];
+        int[] successful_runs = new int[KnownEvent.values().length];
+        int[] indeterminate_runs = new int[KnownEvent.values().length];
+        int grand_total = 0;
+
+        for (WorkflowRun run : allRuns) {
+            try {
+                int event_index = KnownEvent.valueOf(run.event).ordinal();
+
+                all_runs[event_index]++;
+                grand_total++;
+
+                if (run.status.equals(GHWorkflowRun.Conclusion.SUCCESS)) {
+                    successful_runs[event_index]++;
+                } else if (run.status.equals(GHWorkflowRun.Conclusion.FAILURE) ||
+                        run.status.equals(GHWorkflowRun.Conclusion.STARTUP_FAILURE) ||
+                        run.status.equals(GHWorkflowRun.Conclusion.TIMED_OUT)) {
+                    failed_runs[event_index]++;
+                } else {
+                    indeterminate_runs[event_index]++;
+                }
+
+
+            } catch (Exception e) {
+                continue;
+            }
+        }
+
+        for (KnownEvent ke : KnownEvent.values()) {
+            System.out.println(ke + ": " + all_runs[ke.ordinal()] + " "
+                    + successful_runs[ke.ordinal()] + " " + failed_runs[ke.ordinal()]
+                    + " " + indeterminate_runs[ke.ordinal()]);
+        }
+
+        System.out.println("GRAND TOTAL: " + grand_total);
+
+//        System.out.println("Total workflow runs: " + allRuns.size());
+//        System.out.println("Total successful runs: " + successRuns.size());
+//        System.out.println("Total failed runs: " + failedRuns.size());
+//        System.out.println("Total push runs: " + pushRuns.size());
+//        System.out.println("Total pull request runs: " + prRuns.size());
+//        System.out.println("Total other runs: " + anyOtherRuns.size());
+//        System.out.println("Success rate: " + (successRuns.size() * 100.0 / allRuns.size()) + "%");
+//        System.out.println("Failure rate: " + (failedRuns.size() * 100.0 / allRuns.size()) + "%");
+//        System.out.println("Push runs success rate: " + (pushRuns.stream().filter(run -> run.status.equals(GHWorkflowRun.Conclusion.SUCCESS)).count() * 100.0 / pushRuns.size()) + "%");
+//        System.out.println("Pull request runs success rate: " + (prRuns.stream().filter(run -> run.status.equals(GHWorkflowRun.Conclusion.SUCCESS)).count() * 100.0 / prRuns.size()) + "%");
+//        System.out.println("Other runs success rate: " + (anyOtherRuns.stream().filter(run -> run.status.equals(GHWorkflowRun.Conclusion.SUCCESS)).count() * 100.0 / anyOtherRuns.size()) + "%");
+//        System.out.println("Percentage of runs that are push: " + (pushRuns.size() * 100.0 / allRuns.size()) + "%");
+//        System.out.println("Percentage of runs that are pull request: " + (prRuns.size() * 100.0 / allRuns.size()) + "%");
+//        System.out.println("Percentage of runs that are other: " + (anyOtherRuns.size() * 100.0 / allRuns.size()) + "%");
+    }
+
     public void statistics() {
         List<String> workflowsWithDispatch = workflows_with_workflow_dispatch();
         Dotenv dotenv = Dotenv.load();
@@ -217,7 +273,9 @@ public class TriggerExecFreqComputer {
         Path sampled_workflows = Path.of("sampled_workflows", project.replace("/", "_") + ".csv");
 
         if (!sampled_workflows.toFile().exists()) {
-            throw new RuntimeException("sampled_workflows folder does not exist for project: " + project);
+            // TODO: AAAAAAAA
+            logger.error("sampled_workflows folder does not exist for project: {}", project);
+            return new ArrayList<>();
         }
 
         List<String> workflows = Helper.getFileLinesSafe(sampled_workflows).stream().skip(1).toList();
@@ -235,13 +293,13 @@ public class TriggerExecFreqComputer {
 
             try (var lines = Files.lines(workflowRunsPath)) {
                 List<WorkflowRun> runs = lines.skip(1)
-                        .map(WorkflowRun::fromCSV)
+                        .map(WorkflowRun::fromCSV).filter(Objects::nonNull)
                         .filter(run -> run.createdAt.isAfter(cutoff))
                         .toList();
 
                 res.addAll(runs);
             } catch (IOException e) {
-                logger.error("Error reading workflow runs file: {}, skipping...", workflowRunsPath, e);
+                logger.error("Error reading workflow runs file: {}, skipping...", workflowRunsPath);
             }
         }
 
