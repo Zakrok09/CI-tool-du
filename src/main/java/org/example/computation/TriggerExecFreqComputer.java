@@ -273,7 +273,6 @@ public class TriggerExecFreqComputer {
         Path sampled_workflows = Path.of("sampled_workflows", project.replace("/", "_") + ".csv");
 
         if (!sampled_workflows.toFile().exists()) {
-            // TODO: AAAAAAAA
             logger.error("sampled_workflows folder does not exist for project: {}", project);
             return new ArrayList<>();
         }
