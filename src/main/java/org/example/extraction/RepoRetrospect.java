@@ -108,7 +108,6 @@ public class RepoRetrospect {
         }
     }
 
-    // TODO: Change this when collection algorithm is generic.
     /**
      * Walk over the sampled commits and calculate code comment percentage
      */

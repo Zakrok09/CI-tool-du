@@ -22,16 +22,6 @@ public class TriggerExecFreqComputer {
         projects = Helper.getFileLinesSafe(projectsCSVFile);
     }
 
-
-//    PULL_REQUEST;844904
-//    PUSH;180423
-//    SCHEDULE;26105
-//    WORKFLOW_RUN;12746
-//    WORKFLOW_DISPATCH;6852
-//    MERGE_GROUP;636
-//    RELEASE;321
-//    REPOSITORY_DISPATCH;156
-
     private List<String> extractTriggersFromLine(String line) {
         String[] parts = line.split(";");
         if (parts.length < 4) {
@@ -131,20 +121,6 @@ public class TriggerExecFreqComputer {
 
         System.out.println("GRAND TOTAL: " + grand_total);
 
-//        System.out.println("Total workflow runs: " + allRuns.size());
-//        System.out.println("Total successful runs: " + successRuns.size());
-//        System.out.println("Total failed runs: " + failedRuns.size());
-//        System.out.println("Total push runs: " + pushRuns.size());
-//        System.out.println("Total pull request runs: " + prRuns.size());
-//        System.out.println("Total other runs: " + anyOtherRuns.size());
-//        System.out.println("Success rate: " + (successRuns.size() * 100.0 / allRuns.size()) + "%");
-//        System.out.println("Failure rate: " + (failedRuns.size() * 100.0 / allRuns.size()) + "%");
-//        System.out.println("Push runs success rate: " + (pushRuns.stream().filter(run -> run.status.equals(GHWorkflowRun.Conclusion.SUCCESS)).count() * 100.0 / pushRuns.size()) + "%");
-//        System.out.println("Pull request runs success rate: " + (prRuns.stream().filter(run -> run.status.equals(GHWorkflowRun.Conclusion.SUCCESS)).count() * 100.0 / prRuns.size()) + "%");
-//        System.out.println("Other runs success rate: " + (anyOtherRuns.stream().filter(run -> run.status.equals(GHWorkflowRun.Conclusion.SUCCESS)).count() * 100.0 / anyOtherRuns.size()) + "%");
-//        System.out.println("Percentage of runs that are push: " + (pushRuns.size() * 100.0 / allRuns.size()) + "%");
-//        System.out.println("Percentage of runs that are pull request: " + (prRuns.size() * 100.0 / allRuns.size()) + "%");
-//        System.out.println("Percentage of runs that are other: " + (anyOtherRuns.size() * 100.0 / allRuns.size()) + "%");
     }
 
     public void statistics() {
@@ -171,72 +147,6 @@ public class TriggerExecFreqComputer {
 
         System.out.println("Total percentage of runs triggered by workflow_dispatch: " + (totalPercentage / workflowsWithDispatch.size()) + "%");
         System.out.println("Variance of percentages: " + calculateVariance(workflowsWithDispatch, cutoff));
-
-//        List<WorkflowRun> allRuns = allRuns();
-//
-//        List<WorkflowRun> failedRuns = new ArrayList<>();
-//        List<WorkflowRun> successRuns = new ArrayList<>();
-//        List<WorkflowRun> pushRuns = new ArrayList<>();
-//        List<WorkflowRun> prRuns = new ArrayList<>();
-//        List<WorkflowRun> anyOtherRuns = new ArrayList<>();
-//
-//        List<WorkflowRun> wfDispatchRuns = new ArrayList<>();
-//        List<WorkflowRun> wfDispatchRunsFailed = new ArrayList<>();
-//        List<WorkflowRun> wfDispatchRunsSuccess = new ArrayList<>();
-//
-//        List<String> workflowsWithDispatch = workflows_with_workflow_dispatch();
-//
-//        for (String file : workflowsWithDispatch) {
-//            List<WorkflowRun> runs = runsForFile(file);
-//            wfDispatchRuns.addAll(runs);
-//        }
-//
-//        for (WorkflowRun run : wfDispatchRuns) {
-//            if (run.status.equals(GHWorkflowRun.Conclusion.SUCCESS)) {
-//                successRuns.add(run);
-//            } else {
-//                failedRuns.add(run);
-//            }
-//
-//            if (run.event.equalsIgnoreCase("push")) {
-//                pushRuns.add(run);
-//            } else if (run.event.equalsIgnoreCase("pull_request")) {
-//                prRuns.add(run);
-//            } else {
-//                anyOtherRuns.add(run);
-//            }
-//        }
-//
-//        for (WorkflowRun run : allRuns) {
-//            if (run.status.equals(GHWorkflowRun.Conclusion.SUCCESS)) {
-//                successRuns.add(run);
-//            } else {
-//                failedRuns.add(run);
-//            }
-//
-//            if (run.event.equalsIgnoreCase("push")) {
-//                pushRuns.add(run);
-//            } else if (run.event.equalsIgnoreCase("pull_request")) {
-//                prRuns.add(run);
-//            } else {
-//                anyOtherRuns.add(run);
-//            }
-//        }
-//
-//        System.out.println("Total workflow runs: " + allRuns.size());
-//        System.out.println("Total successful runs: " + successRuns.size());
-//        System.out.println("Total failed runs: " + failedRuns.size());
-//        System.out.println("Total push runs: " + pushRuns.size());
-//        System.out.println("Total pull request runs: " + prRuns.size());
-//        System.out.println("Total other runs: " + anyOtherRuns.size());
-//        System.out.println("Success rate: " + (successRuns.size() * 100.0 / allRuns.size()) + "%");
-//        System.out.println("Failure rate: " + (failedRuns.size() * 100.0 / allRuns.size()) + "%");
-//        System.out.println("Push runs success rate: " + (pushRuns.stream().filter(run -> run.status.equals(GHWorkflowRun.Conclusion.SUCCESS)).count() * 100.0 / pushRuns.size()) + "%");
-//        System.out.println("Pull request runs success rate: " + (prRuns.stream().filter(run -> run.status.equals(GHWorkflowRun.Conclusion.SUCCESS)).count() * 100.0 / prRuns.size()) + "%");
-//        System.out.println("Other runs success rate: " + (anyOtherRuns.stream().filter(run -> run.status.equals(GHWorkflowRun.Conclusion.SUCCESS)).count() * 100.0 / anyOtherRuns.size()) + "%");
-//        System.out.println("Percentage of runs that are push: " + (pushRuns.size() * 100.0 / allRuns.size()) + "%");
-//        System.out.println("Percentage of runs that are pull request: " + (prRuns.size() * 100.0 / allRuns.size()) + "%");
-//        System.out.println("Percentage of runs that are other: " + (anyOtherRuns.size() * 100.0 / allRuns.size()) + "%");
     }
 
     private double calculateVariance(List<String> workflowsWithDispatch, Instant cutoff) {

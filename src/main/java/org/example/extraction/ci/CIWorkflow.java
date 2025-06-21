@@ -11,7 +11,6 @@ public class CIWorkflow {
     private final String file_content;
     private final boolean isExecutingTests;
 
-    /* todo: make this use an enum */
     private final List<String> triggers;
 
     public CIWorkflow(GHWorkflow workflow, String file_content, List<String> triggers, boolean isExecutingTests) {

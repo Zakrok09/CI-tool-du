@@ -7,6 +7,8 @@ import org.yaml.snakeyaml.Yaml;
 import java.util.*;
 import java.util.regex.Pattern;
 
+import static org.example.Main.logger;
+
 public class CIContentParser {
     private final String content;
 
@@ -113,7 +115,7 @@ public class CIContentParser {
                     }
                 }
             }
-            case null, default -> System.out.println("hui");
+            case null, default -> logger.warn("Failed parsing workflow file");
         }
 
         return res;

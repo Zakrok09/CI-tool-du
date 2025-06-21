@@ -16,7 +16,6 @@ import static org.example.Main.logger;
 public class CachedDataRepoFetcher {
     /** Checks local file system in repos/**. If a repo is found there, it is returned.
      * If not, it's collected using the API object, and saved for future use.
-     * TODO: Save a timestamp as well? For updates/data safety.
      * @param gh GitHub API object
      * @param repoName name of repo to fetch
      * @param forceUpdate will update the local file even if found
